@@ -20,7 +20,6 @@ export class ApiService {
             const response = await api.post("/products", {
                 data
             });
-            console.log("Criando produto meu amigo")
             return response.data;
         } catch (error: any) {
             console.error("Erro ao criar o produto:", error);
