@@ -1,23 +1,11 @@
 import { api } from "../functions/axios";
+import { Product } from "../interfaces";
 
-type Category = {
-    id: string;
-    name: string;
-}
+export class ProductService {
 
-type Product = {
-    id: string;
-    name: string;
-    price: number;
-    description: string;
-    categoryId?: string | undefined;
-}
-
-export class ApiService {
-
-    async createProduct(data: Product): Promise<void> {
+    async createProduct(data: Product): Promise<Product> {
         try {
-            const response = await api.post("/products", {
+            const response = await api.post("/product", {
                 data
             });
             return response.data;
@@ -27,9 +15,9 @@ export class ApiService {
         }
     }
 
-    async getProducts(): Promise<Product | void> {
+    async getProducts(): Promise<Product[]> {
         try {
-            const response = await api.get("/products");
+            const response = await api.get("/product");
             return response.data;
         } catch (error: any) {
             console.error("Erro ao obter os produtos:", error);
@@ -37,9 +25,9 @@ export class ApiService {
         }
     }
 
-    async getProductById(id: string): Promise<Product | void> {
+    async getProductById(id: string): Promise<Product> {
         try {
-            const response = await api.get(`/products/${id}`);
+            const response = await api.get(`/product/products/${id}`);
             return response.data;
         } catch (error: any) {
             console.error("Erro ao obter o produto:", error);
@@ -48,9 +36,9 @@ export class ApiService {
     }
 
 
-    async updateProduct(id: string, data: Product): Promise<void> {
+    async updateProduct(id: string, data: Product): Promise<Product> {
         try {
-            const response = await api.put(`/products/${id}`, {
+            const response = await api.put(`/product/products/${id}`, {
                 data
             });
             return response.data;
@@ -62,7 +50,7 @@ export class ApiService {
 
     async deleteProduct(id: string): Promise<void> {
         try {
-            const response = await api.delete(`/products/${id}`);
+            const response = await api.delete(`/product/products/${id}`);
             return response.data;
         } catch (error: any) {
             console.error("Erro ao deletar o produto:", error);

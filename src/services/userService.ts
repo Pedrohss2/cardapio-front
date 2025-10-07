@@ -1,14 +1,12 @@
-import { api } from "../functions/axios";
+import { api } from '@/src/functions/axios';
 import { LoginUser, User } from "../interfaces";
 
 export class UserService {
 
-    async registerUser(data: User): Promise<User> {
+     async registerUser(data: User): Promise<User> {
 
         try {
-            const response = await api.post("/users", {
-                data
-            });
+            const response = await api.post("/users/register", data);
             return response.data;
         }
         catch (error: any) {
@@ -19,9 +17,7 @@ export class UserService {
 
     async loginUser(data: LoginUser): Promise<LoginUser> {
         try {
-            const response = await api.post("/users/login", {
-                data
-            });
+            const response = await api.post("/auth/login", data);
             return response.data;
         }
         catch (error: any) {
