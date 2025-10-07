@@ -1,11 +1,12 @@
 "use client"
 
+import { useAuth } from "@/src/contexts/AuthContext";
 import { Product } from "@/src/interfaces";
 import { ProductService } from "@/src/services/productService";
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 
 export default function Products() {
-
+  const {isAuthenticated} = useAuth()
   const [produtos, setProdutos] = useState<Product[]>([]);
 
   useEffect(() => {
@@ -23,13 +24,13 @@ export default function Products() {
     };
     fetchProducts()
 
-  }, [produtos]);
+  }, []);
 
 
   return (
     <div className="max-w-6xl mx-auto p-6">
       <h2 className="text-3xl font-bold text-gray-800 mb-6 text-center">
-        Cardapio
+        Cardapio 
       </h2>
 
       <div className="grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

@@ -15,9 +15,10 @@ export class UserService {
         }
     }
 
-    async loginUser(data: LoginUser): Promise<LoginUser> {
+    async loginUser(data: LoginUser): Promise<string> {
         try {
             const response = await api.post("/auth/login", data);
+            console.log(response.data);
             return response.data;
         }
         catch (error: any) {

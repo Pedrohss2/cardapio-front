@@ -7,10 +7,12 @@ import { LoginUser, User } from '@/src/interfaces';
 import { UserService } from '@/src/services/userService';
 import { MdLogin, MdOutlineMailOutline } from "react-icons/md";
 import { RiLockPasswordLine } from 'react-icons/ri';
+import { useAuth } from '@/src/contexts/AuthContext';
 
 export default function AuthForm() {
     const router = useRouter();
     const userService = new UserService();
+    const { login } = useAuth();
 
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
@@ -33,9 +35,11 @@ export default function AuthForm() {
                 password,
             };
 
-            await userService.loginUser(userData);
+            const response = await userService.loginUser(userData);
 
             setSuccess(true);
+            login(response);
+
             router.push('/products/')
 
             setName('');
