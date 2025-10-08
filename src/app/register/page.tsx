@@ -6,6 +6,10 @@ import { ProductService } from "@/src/services/productService";
 import { useEffect, useState, useRef } from "react";
 
 export default function Register() {
+    const categoryService = new CategoryService();
+    const productService = new ProductService();
+
+
     const [category, setCategories] = useState<any[]>([])
     const [image, setImage] = useState<File | null>(null);
     const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -62,9 +66,8 @@ export default function Register() {
 
     useEffect(() => {
         const fetchCategories = async () => {
-            const service = new CategoryService();
             try {
-                service.get().then((data: any) => {
+                categoryService.get().then((data: any) => {
                     setCategories(data)
                 })
             } catch (error: any) {
@@ -99,7 +102,7 @@ export default function Register() {
                 name: "",
             });
 
-            const updatedCategories = await service.get();
+            const updatedCategories = await categoryService.get();
             setCategories(updatedCategories);
         } catch (error) {
             console.log("Error", error)
@@ -116,11 +119,8 @@ export default function Register() {
             categoryId: formProduct.category,
         };
 
-
-        const service = new ProductService();
-
         try {
-            const response = await service.createProduct(productData, image || undefined);
+            const response = await productService.createProduct(productData, image || undefined);
             setFormProduct({
                 name: "",
                 description: "",
@@ -149,10 +149,9 @@ export default function Register() {
     const handleDeleteCategory = async (id: string) => {
         if (window.confirm("Tem certeza que deseja excluir esta categoria?")) {
             try {
-                const service = new CategoryService();
-                await service.deleteCategory(id);
+                await categoryService.deleteCategory(id);
 
-                const updatedCategories = await service.get();
+                const updatedCategories = await categoryService.get();
                 setCategories(updatedCategories);
             } catch (error) {
                 console.log("Error deleting category", error);
