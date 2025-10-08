@@ -6,9 +6,7 @@ export class CategoryService {
 
     async create(data: Category): Promise<Category> {
         try {
-            const response = await api.post("/category", {
-                data
-            });
+            const response = await api.post("/category", data);
 
             return response.data;
         } catch (error: any) {
@@ -17,7 +15,7 @@ export class CategoryService {
         }
     }
 
-    async get(): Promise<Category> {
+    async get(): Promise<Category[]> {
         try {
             const response = await api.get("/category");
             return response.data;
@@ -42,9 +40,7 @@ export class CategoryService {
 
     async update(id: string, data: Category): Promise<Category> {
         try {
-            const response = await api.put(`/category/${id}`, {
-                data
-            });
+            const response = await api.put(`/category/${id}`, data);
             return response.data;
         } catch (error: any) {
             console.error("Erro ao atualizar a categoria:", error);
@@ -52,7 +48,7 @@ export class CategoryService {
         }
     }
 
-    async deleteProduct(id: string): Promise<Category> {
+    async deleteCategory(id: string): Promise<Category> {
         try {
             const response = await api.delete(`/category/${id}`);
             return response.data;

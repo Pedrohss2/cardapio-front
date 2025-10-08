@@ -10,15 +10,16 @@ export type LoginUser = {
 }
 
 export type Product = {
-    id: string;
+    id?: string;
     name: string;
     description: string;
     price: number;
+    image?: string;
     categoryId: string;
 }
 
 export type Category = {
-    id: string;
+    id?: string;
     name: string;
 
 }
