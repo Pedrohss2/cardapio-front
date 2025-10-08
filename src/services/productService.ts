@@ -11,14 +11,11 @@ export class ProductService {
 
                 formData.append('name', data.name);
                 formData.append('description', data.description);
-                formData.append('price', data.price.toString());
+                formData.append('price', String(data.price));
                 formData.append('categoryId', data.categoryId);
 
-                const response = await api.post("/product", formData, {
-                    headers: {
-                        'Content-Type': 'multipart/form-data',
-                    },
-                });
+                const response = await api.post("/product", formData)
+
                 return response.data;
             } else {
                 const response = await api.post("/product", data);

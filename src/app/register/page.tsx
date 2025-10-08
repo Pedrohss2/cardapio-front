@@ -112,7 +112,7 @@ export default function Register() {
         const productData = {
             name: formProduct.name,
             description: formProduct.description,
-            price: parseFloat(formProduct.price) || 0,
+            price: +formProduct.price,
             categoryId: formProduct.category,
         };
 
@@ -179,13 +179,13 @@ export default function Register() {
 
                 <div className="flex border-b">
                     <button
-                        className={`flex-1 py-4 font-medium ${activeTab === 'product' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-500'}`}
+                        className={`flex-1 py-4  hover:cursor-pointer font-medium ${activeTab === 'product' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-500'}`}
                         onClick={() => setActiveTab('product')}
                     >
                         Produto
                     </button>
                     <button
-                        className={`flex-1 py-4 font-medium ${activeTab === 'category' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-500'}`}
+                        className={`flex-1 py-4 hover:cursor-pointer font-medium ${activeTab === 'category' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-500'}`}
                         onClick={() => setActiveTab('category')}
                     >
                         Categoria
@@ -205,7 +205,7 @@ export default function Register() {
                                     value={formProduct.name}
                                     onChange={handleChangeProduct}
                                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                                    placeholder="Enter product name"
+                                    placeholder="Nome do produto"
                                 />
                             </div>
                             <div className="mb-5">
@@ -218,7 +218,7 @@ export default function Register() {
                                     value={formProduct.description}
                                     onChange={handleChangeProduct}
                                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                                    placeholder="Enter product description"
+                                    placeholder="Descrição do produto"
                                 />
                             </div>
 
@@ -232,13 +232,12 @@ export default function Register() {
                                     onChange={handleChangeProduct}
                                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
                                 >
-                                    <option value="">Select a category</option>
+                                    <option value="" className="hover:cursor-pointer">Selecione uma categoria</option>
                                     {
                                         category.map((valor) => (
-                                            <option key={valor.id} value={valor.id}>{valor.name}</option>
+                                            <option key={valor.id} value={valor.id} className="cursor-pointer">{valor.name}</option>
                                         ))
                                     }
-
                                 </select>
                             </div>
 
@@ -264,7 +263,6 @@ export default function Register() {
                                 <input
                                     type="file"
                                     ref={fileInputRef}
-                                    value={formProduct.imagem}
                                     onChange={handleImageChange}
                                     accept="image/*"
                                     className="hidden"
@@ -304,7 +302,7 @@ export default function Register() {
 
                             <button
                                 type="submit"
-                                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg shadow-md hover:shadow-lg transition duration-300 ease-in-out transform hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50"
+                                className="w-full bg-indigo-600 hover:cursor-pointer hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg shadow-md hover:shadow-lg transition duration-300 ease-in-out transform hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50"
                             >
                                 Registrar produto
                             </button>

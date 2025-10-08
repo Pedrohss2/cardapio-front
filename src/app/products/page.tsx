@@ -35,7 +35,7 @@ export default function Products() {
         <h2 className="text-3xl font-bold text-gray-800 mb-6 text-center">
           Cardapio
         </h2>
-
+    
         <div className="grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {produtos.map((produto) => (
             <div
@@ -44,7 +44,7 @@ export default function Products() {
             >
               <div className="relative h-48 bg-gray-100">
                 <img
-                  src={"https://via.placeholder.com/300x200.png?text=Produto"}
+                  src={produto.image}
                   alt={produto.name}
                   className="object-cover w-full h-full"
                 />
