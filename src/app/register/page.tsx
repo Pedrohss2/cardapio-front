@@ -4,6 +4,7 @@ import Header from "@/src/components/Header";
 import { CategoryService } from "@/src/services/categoryService";
 import { ProductService } from "@/src/services/productService";
 import { useEffect, useState, useRef } from "react";
+import Swal from 'sweetalert2'
 
 export default function Register() {
     const categoryService = new CategoryService();
@@ -109,6 +110,23 @@ export default function Register() {
         }
     }
 
+    const showAllertSuccess = () => {
+        Swal.fire({
+            icon: "success",
+            title: "Produto cadastrado com sucesso!",
+            showConfirmButton: false,
+            timer: 4000
+        });
+    }
+
+    const showAllertError = () => {
+        Swal.fire({
+            icon: "error",
+            title: "Oops...",
+            text: "Algo deu errado, tente novamente!",
+        });
+    }
+
     const submitProduct = async (e: React.FormEvent) => {
         e.preventDefault();
 
@@ -120,7 +138,8 @@ export default function Register() {
         };
 
         try {
-            const response = await productService.createProduct(productData, image || undefined);
+            await productService.createProduct(productData, image || undefined);
+
             setFormProduct({
                 name: "",
                 description: "",
@@ -128,13 +147,17 @@ export default function Register() {
                 price: "",
                 category: "",
             });
+
             setImage(null);
             setImagePreview(null);
+            showAllertSuccess()
+
             if (fileInputRef.current) {
                 fileInputRef.current.value = '';
             }
         }
         catch (error) {
+            showAllertError()
             console.log("Error", error)
         }
     }
@@ -178,13 +201,13 @@ export default function Register() {
 
                 <div className="flex border-b">
                     <button
-                        className={`flex-1 py-4  hover:cursor-pointer font-medium ${activeTab === 'product' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-500'}`}
+                        className={`flex-1 py-4 text-2xl hover:cursor-pointer font-medium ${activeTab === 'product' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-500'}`}
                         onClick={() => setActiveTab('product')}
                     >
                         Produto
                     </button>
                     <button
-                        className={`flex-1 py-4 hover:cursor-pointer font-medium ${activeTab === 'category' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-500'}`}
+                        className={`flex-1 text-2xl py-4 hover:cursor-pointer font-medium ${activeTab === 'category' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-500'}`}
                         onClick={() => setActiveTab('category')}
                     >
                         Categoria
@@ -195,7 +218,7 @@ export default function Register() {
                     {activeTab === 'product' && (
                         <form onSubmit={submitProduct}>
                             <div className="mb-5">
-                                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="name">
+                                <label className=" text-gray-700 text-sm font-bold mb-2" htmlFor="name">
                                     Produto
                                 </label>
                                 <input

@@ -29,22 +29,22 @@ export default function Products() {
 
 
   return (
-    <>
+    <div className="pt-26">
       <Header />
-      <div className="max-w-6xl mx-auto p-6">
+      <div className="max-w-6xl mx-auto p-6 ">
         <h2 className="text-3xl font-bold text-gray-800 mb-6 text-center">
           Cardapio
         </h2>
-    
+
         <div className="grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {produtos.map((produto) => (
             <div
               key={produto.id}
-              className="bg-white border border-gray-200 rounded-2xl shadow-sm hover:shadow-xl transition-all cursor-pointer overflow-hidden"
+              className="bg-white border border-gray-200 rounded-2xl shadow-sm  overflow-hidden"
             >
               <div className="relative h-48 bg-gray-100">
                 <img
-                  src={produto.image}
+                  src={`${process.env.NEXT_PUBLIC_API_URL}/uploads/${produto.image}`}
                   alt={produto.name}
                   className="object-cover w-full h-full"
                 />
@@ -61,6 +61,6 @@ export default function Products() {
           ))}
         </div>
       </div>
-    </>
+    </div>
   );
 }
