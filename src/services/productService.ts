@@ -47,10 +47,9 @@ export class ProductService {
         }
     }
 
-
     async updateProduct(id: string, data: Product): Promise<Product> {
         try {
-            const response = await api.put(`/products/${id}`, {
+            const response = await api.put(`/product/products/${id}`, {
                 data
             });
             return response.data;
@@ -62,7 +61,7 @@ export class ProductService {
 
     async deleteProduct(id: string): Promise<void> {
         try {
-            const response = await api.delete(`/products/${id}`);
+            const response = await api.delete(`/product/products/${id}`);
             return response.data;
         } catch (error: any) {
             console.error("Erro ao deletar o produto:", error);

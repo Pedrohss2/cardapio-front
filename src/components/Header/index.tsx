@@ -25,7 +25,7 @@ export default function Header() {
                             Cardápio Digital
                         </Link>
                     </div>
-                    <div className="flex  items-center justify-between gap-10 ">
+                    <div className="flex  items-center justify-between gap-10 uppercase">
 
                         {!isAuthenticated && (
                             <div className="flex items-center gap-2 hover:cursor-pointer bg-blue-500 hover:bg-blue-600 text-white font-medium py-3 px-6 rounded-lg overflow-hidden transition-all duration-300 ease-in-out transform hover:scale-105 hover:shadow-md">
@@ -41,7 +41,7 @@ export default function Header() {
 
                         {isAuthenticated && pathname !== "/register" && (
                             <div className=" hover:text-blue-500 transition-all duration-300 ease-in-out transform hover:scale-105 ">
-                                <Link href="/register">Registrar um produto</Link>
+                                <Link href="/register">Registrar</Link>
                             </div>
                         )}
 
