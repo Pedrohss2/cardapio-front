@@ -3,8 +3,7 @@
 import { useAuth } from "@/src/contexts/AuthContext"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import Button from "../Button"
-import { MdLogin, MdLogout } from "react-icons/md"
+import { MdLogout } from "react-icons/md"
 
 export default function Header() {
     const { isAuthenticated, logout } = useAuth()
@@ -47,8 +46,11 @@ export default function Header() {
 
                         {isAuthenticated && (
                             <div className="flex items-center gap-2 hover:cursor-pointer bg-blue-500 hover:bg-blue-600 text-white font-medium py-3 px-6 rounded-lg overflow-hidden transition-all duration-300 ease-in-out transform hover:scale-105 hover:shadow-md">
-                                <MdLogout size={25} color="black" />
-                                <button className="text-gray-800" onClick={handleLogout}>Sair</button>
+                                <span>
+
+                                    <MdLogout size={25} color="black" />
+                                </span>
+                                <button className=" text-gray-800" onClick={handleLogout}>Sair</button>
                             </div>
                         )}
                     </div>

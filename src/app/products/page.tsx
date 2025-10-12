@@ -3,19 +3,29 @@
 import Header from "@/src/components/Header";
 import { useAuth } from "@/src/contexts/AuthContext";
 import { Product } from "@/src/interfaces";
+import { CategoryService } from "@/src/services/categoryService";
 import { ProductService } from "@/src/services/productService";
-import { useContext, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { FaRegEdit } from "react-icons/fa";
 import { IoMdClose } from "react-icons/io";
 import { MdDeleteOutline } from "react-icons/md";
 import Swal from "sweetalert2";
 
 export default function Products() {
+  const productService = new ProductService();
+
   const { isAuthenticated } = useAuth()
   const [open, setOpen] = useState(false);
 
   const [produtos, setProdutos] = useState<Product[]>([]);
-  const productService = new ProductService();
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+
+  const [formData, setFormData] = useState({
+    name: "",
+    description: "",
+    price: "",
+    image: null as File | null
+  });
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -30,7 +40,30 @@ export default function Products() {
     };
     fetchProducts()
 
-  }, []);
+  }, [produtos]);
+
+
+  const handleEdit = (produto: Product) => {
+    setSelectedProduct(produto);
+    setFormData({
+      name: produto.name,
+      description: produto.description,
+      price: produto.price.toString(),
+      image: null
+    });
+    setOpen(true);
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setFormData(prev => ({ ...prev, image: e.target.files![0] }));
+    }
+  };
 
   const showAllertConfirmDelete = (id: string) => {
     Swal.fire({
@@ -58,16 +91,38 @@ export default function Products() {
     }
   }
 
-  const updateItem = async (id: string, produto: any) => {
-    try {
-      await productService.updateProduct(id, produto);
+  const handleSubmit = async () => {
+    if (!selectedProduct) return;
+    const data = new FormData();
+    data.append("name", formData.name);
+    data.append("description", formData.description);
+    data.append("price", formData.price);
 
-      setProdutos(produtos.map(produto => produto.id === id ? { ...produto, ...produto } : produto));
-    } catch (error) {
-      console.error("Erro ao excluir o produto:", error);
+    if (formData.image) {
+      data.append("image", formData.image);
     }
 
-  }
+    try {
+      const updated = await productService.updateProduct(selectedProduct.id!, data);
+
+      setProdutos(produtos.map(p =>
+        p.id === selectedProduct.id ? { ...p, ...updated } : p
+      ));
+
+      Swal.fire({
+        icon: "success",
+        title: "Produto atualizado com sucesso!",
+        timer: 2500,
+      });
+
+      setOpen(false);
+      setSelectedProduct(null);
+    } catch (error) {
+      console.error("Erro ao atualizar produto:", error);
+      Swal.fire("Erro", "Falha ao atualizar produto", "error");
+    }
+  };
+
 
   return (
     <div className="pt-26">
@@ -101,6 +156,7 @@ export default function Products() {
                 {isAuthenticated && (
                   <div className="flex items-center justify-end gap-5">
                     <div className="text-blue-500 hover:scale-105 hover:cursor-pointer" onClick={() => {
+                      handleEdit(produto)
                       setOpen(true)
                     }}>
                       <FaRegEdit size={25} />
@@ -129,7 +185,10 @@ export default function Products() {
                       <div className="flex flex-col gap-5">
                         <div className="relative">
                           <input
+                            name="name"
                             type="text"
+                            value={formData.name}
+                            onChange={handleChange}
                             placeholder="Nome do produto"
                             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
                           />
@@ -137,6 +196,9 @@ export default function Products() {
                         <div className="relative">
                           <textarea
                             placeholder="Descrição detalhada"
+                            name="description"
+                            value={formData.description}
+                            onChange={handleChange}
                             rows={3}
                             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 resize-none"
                           />
@@ -144,6 +206,9 @@ export default function Products() {
                         <div className="relative">
                           <input
                             type="number"
+                            name="price"
+                            value={formData.price}
+                            onChange={handleChange}
                             placeholder="Preço (R$)"
                             step="0.01"
                             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
@@ -153,11 +218,13 @@ export default function Products() {
                           <input
                             type="file"
                             accept="image/*"
+                            onChange={handleFileChange}
                             className="w-full px-4 py-3 border border-gray-300 rounded-lg file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-100 file:text-indigo-700 file:hover:cursor-pointer hover:file:bg-indigo-100 transition-all duration-200"
                           />
                         </div>
 
                         <button
+                          onClick={handleSubmit}
                           className="mt-2 bg-blue-600 text-white py-3 rounded-lg  hover:cursor-pointer transition-all duration-300 transform hover:scale-[1.02] shadow-lg hover:shadow-xl"
                         >
                           Salvar Alterações

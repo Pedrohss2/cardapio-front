@@ -47,10 +47,10 @@ export class ProductService {
         }
     }
 
-    async updateProduct(id: string, data: Product): Promise<Product> {
+    async updateProduct(id: string, data: any): Promise<Product> {
         try {
-            const response = await api.put(`/product/products/${id}`, {
-                data
+            const response = await api.put(`/product/products/${id}`, data, {
+                headers: { "Content-Type": "multipart/form-data" }
             });
             return response.data;
         } catch (error: any) {
