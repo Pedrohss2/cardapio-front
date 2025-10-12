@@ -47,7 +47,6 @@ export default function Header() {
                         {isAuthenticated && (
                             <div className="flex items-center gap-2 hover:cursor-pointer bg-blue-500 hover:bg-blue-600 text-white font-medium py-3 px-6 rounded-lg overflow-hidden transition-all duration-300 ease-in-out transform hover:scale-105 hover:shadow-md">
                                 <span>
-
                                     <MdLogout size={25} color="black" />
                                 </span>
                                 <button className=" text-gray-800" onClick={handleLogout}>Sair</button>
