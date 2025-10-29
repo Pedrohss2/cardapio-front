@@ -5,11 +5,19 @@ import { CategoryService } from "@/src/services/categoryService";
 import { ProductService } from "@/src/services/productService";
 import { useEffect, useState, useRef } from "react";
 import Swal from 'sweetalert2'
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod";
+import { productFormSchema, ProductSchema } from "@/src/schemas/formSchema";
+import { error } from "console";
+import { Product } from "@/src/interfaces";
 
 export default function Register() {
     const categoryService = new CategoryService();
     const productService = new ProductService();
 
+    const { register, handleSubmit, formState: { errors } } = useForm<ProductSchema>({
+        resolver: zodResolver(productFormSchema)
+    })
 
     const [category, setCategories] = useState<any[]>([])
     const [image, setImage] = useState<File | null>(null);
@@ -127,19 +135,17 @@ export default function Register() {
         });
     }
 
-    const submitProduct = async (e: React.FormEvent) => {
-        e.preventDefault();
-
+    const submitProduct = async (data: Product) => {
         const productData = {
-            name: formProduct.name,
-            description: formProduct.description,
-            price: +formProduct.price,
-            categoryId: formProduct.category,
+            name: data.name,
+            description: data.description,
+            price: parseFloat(formProduct.price), 
+            categoryId: data.categoryId,
         };
 
         try {
             await productService.createProduct(productData, image || undefined);
-
+            
             setFormProduct({
                 name: "",
                 description: "",
@@ -147,21 +153,21 @@ export default function Register() {
                 price: "",
                 category: "",
             });
-
+            
             setImage(null);
             setImagePreview(null);
+            
             showAllertSuccess()
-
+            
             if (fileInputRef.current) {
                 fileInputRef.current.value = '';
             }
-        }
-        catch (error) {
+        } catch (error) {
             showAllertError()
             console.log("Error", error)
         }
     }
-
+    
     const handleEditCategory = (cat: { id: string, name: string }) => {
         setEditingCategory(cat);
         setFormCategory({
@@ -217,7 +223,7 @@ export default function Register() {
 
                     <div className="py-6 px-8">
                         {activeTab === 'product' && (
-                            <form onSubmit={submitProduct}>
+                            <form onSubmit={handleSubmit(submitProduct)}>
                                 <div className="mb-5">
                                     <label className=" text-gray-700 text-sm font-bold mb-2" htmlFor="name">
                                         Produto
@@ -225,11 +231,13 @@ export default function Register() {
                                     <input
                                         id="name"
                                         type="text"
+                                        {...register("name")}
                                         value={formProduct.name}
                                         onChange={handleChangeProduct}
                                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
                                         placeholder="Nome do produto"
                                     />
+                                    {errors.name && <p className="text-red-500 text-sm">{errors.name.message}</p>}
                                 </div>
                                 <div className="mb-5">
                                     <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="description">
@@ -237,12 +245,14 @@ export default function Register() {
                                     </label>
                                     <input
                                         id="description"
+                                        {...register("description")}
                                         type="text"
                                         value={formProduct.description}
                                         onChange={handleChangeProduct}
                                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
                                         placeholder="Descrição do produto"
                                     />
+                                    {errors.description && <p className="text-red-500 text-sm">{errors.description.message}</p>}
                                 </div>
 
                                 <div className="mb-5">
@@ -251,6 +261,7 @@ export default function Register() {
                                     </label>
                                     <select
                                         id="category"
+                                        {...register("categoryId")}
                                         value={formProduct.category}
                                         onChange={handleChangeProduct}
                                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
@@ -262,6 +273,7 @@ export default function Register() {
                                             ))
                                         }
                                     </select>
+                                    {errors.categoryId && <p className="text-red-500 text-sm">{errors.categoryId.message}</p>}
                                 </div>
 
                                 <div className="mb-5">
@@ -285,11 +297,13 @@ export default function Register() {
                                     </label>
                                     <input
                                         type="file"
+                                        {...register("image")}
                                         ref={fileInputRef}
                                         onChange={handleImageChange}
                                         accept="image/*"
                                         className="hidden"
                                     />
+                                    {errors.image && <p className="text-red-500 text-sm">{errors.image.message}</p>}
                                     {!imagePreview ? (
                                         <div
                                             onClick={triggerFileInput}
@@ -303,6 +317,7 @@ export default function Register() {
                                             <p className="text-gray-600">Clique para selecionar uma imagem</p>
                                             <p className="text-gray-400 text-sm mt-1">PNG, JPG, GIF até 10MB</p>
                                         </div>
+
                                     ) : (
                                         <div className="relative">
                                             <img

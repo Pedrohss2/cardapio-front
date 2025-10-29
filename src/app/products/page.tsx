@@ -2,7 +2,7 @@
 
 import Header from "@/src/components/Header";
 import { useAuth } from "@/src/contexts/AuthContext";
-import { Product } from "@/src/interfaces";
+import { Category, Product } from "@/src/interfaces";
 import { ProductService } from "@/src/services/productService";
 import { CategoryService } from "@/src/services/categoryService";
 import { useEffect, useState } from "react";
@@ -11,14 +11,19 @@ import { IoMdClose } from "react-icons/io";
 import { MdDeleteOutline } from "react-icons/md";
 import Swal from "sweetalert2";
 
+
+
 export default function Products() {
   const productService = new ProductService();
   const categoryService = new CategoryService();
+  const data = new FormData();
+
+
   const { isAuthenticated } = useAuth();
 
   const [open, setOpen] = useState(false);
   const [produtos, setProdutos] = useState<Product[]>([]);
-  const [categories, setCategories] = useState<any[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [formData, setFormData] = useState({
@@ -42,7 +47,7 @@ export default function Products() {
       }
     };
     fetchData();
-  }, []);
+  }, [formData, selectedProduct]);
 
   const handleEdit = (produto: Product) => {
     setSelectedProduct(produto);
@@ -94,7 +99,8 @@ export default function Products() {
 
   const handleSubmit = async () => {
     if (!selectedProduct) return;
-    const data = new FormData();
+
+
     data.append("name", formData.name);
     data.append("description", formData.description);
     data.append("price", formData.price);
@@ -140,15 +146,20 @@ export default function Products() {
           >
             Todas
           </button>
-          {categories.map(cat => (
-            <button
-              key={cat.id}
-              onClick={() => setSelectedCategory(cat.id)}
-              className={`px-4 py-2 hover:cursor-pointer hover:scale-105 rounded-full border ${selectedCategory === cat.id ? 'bg-indigo-600 text-white' : 'bg-white text-gray-700 border-gray-300'} transition`}
-            >
-              {cat.name}
-            </button>
-          ))}
+
+          {categories
+            .filter(cat => produtos.some(prod => prod.categoryId === cat.id))
+            .map(cat => (
+              <button
+                key={cat.id}
+                onClick={() => {
+                  setSelectedCategory(cat.id || null)
+                }}
+                className={`px-4 py-2 hover:cursor-pointer hover:scale-105 rounded-full border ${selectedCategory === cat.id ? 'bg-indigo-600 text-white' : 'bg-white text-gray-700 border-gray-300'} transition`}
+              >
+                {cat.name}
+              </button>
+            ))}
         </div>
 
         <div className="grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
