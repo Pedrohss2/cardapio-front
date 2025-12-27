@@ -26,6 +26,7 @@ export default function Products() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -99,7 +100,6 @@ export default function Products() {
 
   const handleSubmit = async () => {
     if (!selectedProduct) return;
-
 
     data.append("name", formData.name);
     data.append("description", formData.description);

@@ -27,21 +27,15 @@ export default function Header() {
                     <div className="flex  items-center justify-between gap-10 uppercase">
 
                         {!isAuthenticated && (
-                            <div className="flex items-center gap-2 hover:cursor-pointer bg-blue-500 hover:bg-blue-600 text-white font-medium py-3 px-6 rounded-lg overflow-hidden transition-all duration-300 ease-in-out transform hover:scale-105 hover:shadow-md">
-                                <Link href="/login">Login</Link>
-                            </div>
+                            <Link href="/login" className="flex items-center gap-2 hover:cursor-pointer bg-blue-500 hover:bg-blue-600 text-white font-medium py-3 px-6 rounded-lg overflow-hidden transition-all duration-300 ease-in-out transform hover:scale-105 hover:shadow-md">Login</Link>
                         )}
 
                         {isAuthenticated && (
-                            <div className="hover:text-blue-500 transition-all duration-300 ease-in-out transform hover:scale-105">
-                                <Link href="/products">Produtos</Link>
-                            </div>
+                            <Link href="/products" className="hover:text-blue-500 transition-all duration-300 ease-in-out transform hover:scale-105">Produtos</Link>
                         )}
 
                         {isAuthenticated && pathname !== "/register" && (
-                            <div className=" hover:text-blue-500 transition-all duration-300 ease-in-out transform hover:scale-105 ">
-                                <Link href="/register">Registrar</Link>
-                            </div>
+                            <Link href="/register-products" className=" hover:text-blue-500 transition-all duration-300 ease-in-out transform hover:scale-105 ">Registrar</Link>
                         )}
 
                         {isAuthenticated && (

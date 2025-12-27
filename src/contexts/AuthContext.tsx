@@ -20,11 +20,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     const login = (accessToken: string) => {
         localStorage.setItem("accessToken", accessToken);
+        // also set cookie so server-side middleware can read it
+        if (typeof document !== 'undefined') {
+            document.cookie = `accessToken=${accessToken}; path=/`;
+        }
         setToken(accessToken);
     };
 
     const logout = () => {
         localStorage.removeItem("accessToken");
+        if (typeof document !== 'undefined') {
+            document.cookie = 'accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+        }
         setToken(null);
     };
 

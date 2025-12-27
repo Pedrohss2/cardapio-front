@@ -8,6 +8,9 @@ import { UserService } from '@/src/services/userService';
 import { MdLogin, MdOutlineMailOutline } from "react-icons/md";
 import { RiLockPasswordLine } from 'react-icons/ri';
 import { useAuth } from '@/src/contexts/AuthContext';
+import { FaRegEyeSlash, FaRegEye } from 'react-icons/fa';
+import Button from '@/src/components/Button';
+import Swal from 'sweetalert2';
 
 export default function AuthForm() {
     const router = useRouter();
@@ -21,6 +24,7 @@ export default function AuthForm() {
     const [error, setError] = useState('');
     const [success, setSuccess] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [showPassowrd, setShowPassword] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -46,6 +50,7 @@ export default function AuthForm() {
             setPassword('');
             setConfirmPassword('');
         } catch (err: any) {
+            Swal.fire({ icon: "error", title: "Erro", text: "Email ou senha incorretos." });
             console.error('Auth error:', err);
         } finally {
             setLoading(false);
@@ -92,22 +97,44 @@ export default function AuthForm() {
                         />
                     </div>
 
-                    <div className='flex items-center justify-center gap-2'>
+                    <div className='flex items-center justify-center gap-2 w-full'>
                         <RiLockPasswordLine size={35} />
                         <label htmlFor="password" className="sr-only">
                             Senha
                         </label>
-                        <input
-                            id="password"
-                            name="password"
-                            type="password"
-                            autoComplete={"current-password"}
-                            required
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                            placeholder="Password"
-                        />
+
+                        <div className="relative w-full">
+                            <input
+                                id="password"
+                                name="password"
+                                type={showPassowrd ? 'text' : 'password'}
+                                autoComplete={"current-password"}
+                                required
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                className="appearance-none rounded-md relative block w-full px-3 py-2 pr-10 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                                placeholder="Password"
+                            />
+
+                            {showPassowrd ? (
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassowrd)}
+                                    className="absolute right-3 top-1/2 h-10 w-10 flex items-center justify-center transform -translate-y-1/2 text-gray-500 cursor-pointer z-20"
+                                >
+                                    <FaRegEye />
+                                </button>
+                            ) : (
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassowrd)}
+                                    className="absolute right-3 top-1/2 h-10 w-10 flex items-center justify-center transform -translate-y-1/2 text-gray-500 cursor-pointer z-20"
+                                >
+                                    <FaRegEyeSlash />
+                                </button>
+                            )}
+                        </div>
+
                     </div>
 
                     <div>
@@ -123,6 +150,19 @@ export default function AuthForm() {
                                 Entrar
                             </span>}
                         </button>
+
+                        <div className='text-center mt-4'>
+
+                            <p>
+                                Não possui uma conta?{' '}
+                                <a
+                                    href="/register"
+                                    className="font-medium text-indigo-600 hover:text-indigo-500"
+                                >
+                                    Registre-se
+                                </a>
+                            </p>
+                        </div>
                     </div>
                 </form>
 

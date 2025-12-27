@@ -1,423 +1,115 @@
 "use client"
 
-import Header from "@/src/components/Header";
-import { CategoryService } from "@/src/services/categoryService";
-import { ProductService } from "@/src/services/productService";
-import { useEffect, useState, useRef } from "react";
-import Swal from 'sweetalert2'
-import { useForm } from "react-hook-form"
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { productFormSchema, ProductSchema } from "@/src/schemas/formSchema";
-import { error } from "console";
-import { Product } from "@/src/interfaces";
+import { useForm } from "react-hook-form";
+import Swal from "sweetalert2";
+import { User } from "@/src/interfaces";
+import { UserService } from "@/src/services/userService";
 
-export default function Register() {
-    const categoryService = new CategoryService();
-    const productService = new ProductService();
-
-    const { register, handleSubmit, formState: { errors } } = useForm<ProductSchema>({
-        resolver: zodResolver(productFormSchema)
+const registerSchema = z
+    .object({
+        name: z.string().min(3, { message: "Nome é obrigatório" }),
+        email: z.string().min(4, { message: "Email deve ter no minimo 4 caraceres" }),
+        password: z.string().min(6, { message: "Senha deve ter ao menos 6 caracteres" }),
+        confirmPassword: z.string().min(6, { message: "Confirmação de senha é obrigatória" }),
     })
-
-    const [category, setCategories] = useState<any[]>([])
-    const [image, setImage] = useState<File | null>(null);
-    const [imagePreview, setImagePreview] = useState<string | null>(null);
-    const [activeTab, setActiveTab] = useState<'product' | 'category'>('product');
-    const [editingCategory, setEditingCategory] = useState<{ id: string, name: string } | null>(null);
-    const fileInputRef = useRef<HTMLInputElement>(null);
-
-    const [formProduct, setFormProduct] = useState({
-        name: "",
-        description: "",
-        imagem: "",
-        price: "",
-        category: "",
+    .refine((data) => data.password === data.confirmPassword, {
+        path: ["confirmPassword"],
+        message: "As senhas não conferem",
     });
 
-    const [formCategory, setFormCategory] = useState({
-        name: "",
-    });
+type RegisterForm = z.infer<typeof registerSchema>;
 
-    const handleChangeProduct = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-        const { id, value } = e.target;
-        setFormProduct((prev) => ({ ...prev, [id]: value }));
-    };
+export default function RegisterPage() {
+    const router = useRouter();
+    const [loading, setLoading] = useState(false);
 
-    const handleChangeCategory = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const { id, value } = e.target;
-        setFormCategory((prev) => ({ ...prev, [id]: value }));
-    };
+    const {
+        register,
+        handleSubmit,
+        formState: { errors },
+    } = useForm<RegisterForm>({ resolver: zodResolver(registerSchema) });
 
-    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files[0]) {
-            const file = e.target.files[0];
-            setImage(file);
-
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                setImagePreview(e.target?.result as string);
-            };
-            reader.readAsDataURL(file);
-        }
-    };
-
-    const triggerFileInput = () => {
-        fileInputRef.current?.click();
-    };
-
-    const removeImage = () => {
-        setImage(null);
-        setImagePreview(null);
-        if (fileInputRef.current) {
-            fileInputRef.current.value = '';
-        }
-    };
-
-    useEffect(() => {
-        const fetchCategories = async () => {
-            try {
-                categoryService.get().then((data: any) => {
-                    setCategories(data)
-                })
-            } catch (error: any) {
-                console.log(error)
-            }
-        }
-        fetchCategories()
-    }, [])
-
-
-    const submitCategory = async (e: React.FormEvent) => {
-        e.preventDefault();
-
-        const categoryData = {
-            name: formCategory.name,
-        };
-        if (categoryData.name === '') {
-            alert('Por favor, preencha um valor no campo de nome da categoria.');
-            return;
-        }
-
-        const service = new CategoryService();
+    const onSubmit = async (data: RegisterForm) => {
+        setLoading(true);
+        const payload: User = { name: data.name, email: data.email, password: data.password };
 
         try {
-            if (editingCategory) {
-                await service.update(editingCategory.id, categoryData);
-                setEditingCategory(null);
-            } else {
-                await service.create(categoryData);
-            }
-            setFormCategory({
-                name: "",
-            });
+            const service = new UserService();
+            await service.registerUser(payload);
 
-            const updatedCategories = await categoryService.get();
-            setCategories(updatedCategories);
-        } catch (error) {
-            console.log("Error", error)
+            Swal.fire(
+                {
+                    icon: "success",
+                    title: "Usuário criado",
+                    text: "Registro realizado com sucesso."
+                });
+
+            router.push("/login");
+        } catch (err: any) {
+            Swal.fire({ icon: "error", title: "Erro", text: "Falha ao registrar usuario." });
+        } finally {
+            setLoading(false);
         }
-    }
-
-    const showAllertSuccess = () => {
-        Swal.fire({
-            icon: "success",
-            title: "Produto cadastrado com sucesso!",
-            showConfirmButton: false,
-            timer: 4000
-        });
-    }
-
-    const showAllertError = () => {
-        Swal.fire({
-            icon: "error",
-            title: "Oops...",
-            text: "Algo deu errado, tente novamente!",
-        });
-    }
-
-    const submitProduct = async (data: Product) => {
-        const productData = {
-            name: data.name,
-            description: data.description,
-            price: parseFloat(formProduct.price), 
-            categoryId: data.categoryId,
-        };
-
-        try {
-            await productService.createProduct(productData, image || undefined);
-            
-            setFormProduct({
-                name: "",
-                description: "",
-                imagem: "",
-                price: "",
-                category: "",
-            });
-            
-            setImage(null);
-            setImagePreview(null);
-            
-            showAllertSuccess()
-            
-            if (fileInputRef.current) {
-                fileInputRef.current.value = '';
-            }
-        } catch (error) {
-            showAllertError()
-            console.log("Error", error)
-        }
-    }
-    
-    const handleEditCategory = (cat: { id: string, name: string }) => {
-        setEditingCategory(cat);
-        setFormCategory({
-            name: cat.name,
-        });
-    }
-
-    const handleDeleteCategory = async (id: string) => {
-        if (window.confirm("Tem certeza que deseja excluir esta categoria?")) {
-            try {
-                await categoryService.deleteCategory(id);
-
-                const updatedCategories = await categoryService.get();
-                setCategories(updatedCategories);
-            } catch (error) {
-                console.log("Error deleting category", error);
-                alert("Erro ao excluir categoria");
-            }
-        }
-    }
-
-    const cancelEdit = () => {
-        setEditingCategory(null);
-        setFormCategory({
-            name: "",
-        });
-    }
+    };
 
     return (
-        <div className="pt-10">
-            <Header />
-            <div className="min-h-screen bg-gradient-to-br mt-10 from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-                <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden">
-                    <div className="bg-indigo-600 py-6 px-8 text-center">
-                        <h1 className="text-3xl font-bold text-white">Cadastrar</h1>
-                        <p className="text-indigo-200 mt-2">Adicionar novos produtos e categorias</p>
-                    </div>
-
-                    <div className="flex border-b">
-                        <button
-                            className={`flex-1 py-4 text-2xl hover:cursor-pointer font-medium ${activeTab === 'product' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-500'}`}
-                            onClick={() => setActiveTab('product')}
-                        >
-                            Produto
-                        </button>
-                        <button
-                            className={`flex-1 text-2xl py-4 hover:cursor-pointer font-medium ${activeTab === 'category' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-500'}`}
-                            onClick={() => setActiveTab('category')}
-                        >
-                            Categoria
-                        </button>
-                    </div>
-
-                    <div className="py-6 px-8">
-                        {activeTab === 'product' && (
-                            <form onSubmit={handleSubmit(submitProduct)}>
-                                <div className="mb-5">
-                                    <label className=" text-gray-700 text-sm font-bold mb-2" htmlFor="name">
-                                        Produto
-                                    </label>
-                                    <input
-                                        id="name"
-                                        type="text"
-                                        {...register("name")}
-                                        value={formProduct.name}
-                                        onChange={handleChangeProduct}
-                                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                                        placeholder="Nome do produto"
-                                    />
-                                    {errors.name && <p className="text-red-500 text-sm">{errors.name.message}</p>}
-                                </div>
-                                <div className="mb-5">
-                                    <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="description">
-                                        Descrição
-                                    </label>
-                                    <input
-                                        id="description"
-                                        {...register("description")}
-                                        type="text"
-                                        value={formProduct.description}
-                                        onChange={handleChangeProduct}
-                                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                                        placeholder="Descrição do produto"
-                                    />
-                                    {errors.description && <p className="text-red-500 text-sm">{errors.description.message}</p>}
-                                </div>
-
-                                <div className="mb-5">
-                                    <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="category">
-                                        Categoria
-                                    </label>
-                                    <select
-                                        id="category"
-                                        {...register("categoryId")}
-                                        value={formProduct.category}
-                                        onChange={handleChangeProduct}
-                                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                                    >
-                                        <option value="" className="hover:cursor-pointer">Selecione uma categoria</option>
-                                        {
-                                            category.map((valor) => (
-                                                <option key={valor.id} value={valor.id} className="cursor-pointer">{valor.name}</option>
-                                            ))
-                                        }
-                                    </select>
-                                    {errors.categoryId && <p className="text-red-500 text-sm">{errors.categoryId.message}</p>}
-                                </div>
-
-                                <div className="mb-5">
-                                    <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="price">
-                                        Preço (R$)
-                                    </label>
-                                    <input
-                                        id="price"
-                                        type="number"
-                                        step="0.01"
-                                        value={formProduct.price}
-                                        onChange={handleChangeProduct}
-                                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                                        placeholder="0.00"
-                                    />
-                                </div>
-
-                                <div className="mb-5">
-                                    <label className="block text-gray-700 text-sm font-bold mb-2">
-                                        Imagem do Produto
-                                    </label>
-                                    <input
-                                        type="file"
-                                        {...register("image")}
-                                        ref={fileInputRef}
-                                        onChange={handleImageChange}
-                                        accept="image/*"
-                                        className="hidden"
-                                    />
-                                    {errors.image && <p className="text-red-500 text-sm">{errors.image.message}</p>}
-                                    {!imagePreview ? (
-                                        <div
-                                            onClick={triggerFileInput}
-                                            className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-indigo-400 transition"
-                                        >
-                                            <div className="text-indigo-600 mx-auto mb-2">
-                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                                </svg>
-                                            </div>
-                                            <p className="text-gray-600">Clique para selecionar uma imagem</p>
-                                            <p className="text-gray-400 text-sm mt-1">PNG, JPG, GIF até 10MB</p>
-                                        </div>
-
-                                    ) : (
-                                        <div className="relative">
-                                            <img
-                                                src={imagePreview}
-                                                alt="Preview"
-                                                className="rounded-lg w-full h-48 object-cover border border-gray-300"
-                                            />
-                                            <button
-                                                type="button"
-                                                onClick={removeImage}
-                                                className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
-                                            >
-                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                                                </svg>
-                                            </button>
-                                        </div>
-                                    )}
-                                </div>
-
-                                <button
-                                    type="submit"
-                                    className="w-full bg-indigo-600 hover:cursor-pointer hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg shadow-md hover:shadow-lg transition duration-300 ease-in-out transform hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50"
-                                >
-                                    Registrar produto
-                                </button>
-                            </form>
-                        )}
-
-                        {activeTab === 'category' && (
-                            <form onSubmit={submitCategory}>
-                                <div className="mb-5">
-                                    <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="categoryName">
-                                        {editingCategory ? "Editar Categoria" : "Nova Categoria"}
-                                    </label>
-                                    <input
-                                        id="name"
-                                        type="text"
-                                        value={formCategory.name}
-                                        onChange={handleChangeCategory}
-                                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                                        placeholder="Nome da categoria"
-                                    />
-                                </div>
-                                <div className="flex gap-2">
-                                    <button
-                                        type="submit"
-                                        className="flex-1 bg-indigo-600 hover:scale-105 hover:cursor-pointer hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg shadow-md hover:shadow-lg transition duration-300 ease-in-out transform hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50"
-                                    >
-                                        {editingCategory ? "Atualizar" : "Registrar"} categoria
-                                    </button>
-                                    {editingCategory && (
-                                        <button
-                                            type="button"
-                                            onClick={cancelEdit}
-                                            className="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-4 rounded-lg shadow-md hover:shadow-lg transition duration-300 ease-in-out transform hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50"
-                                        >
-                                            Cancelar
-                                        </button>
-                                    )}
-                                </div>
-
-                                <div className="mt-8">
-                                    <h3 className="text-lg font-semibold text-gray-800 mb-4">Categorias</h3>
-                                    <div className="border rounded-lg">
-                                        {category.length > 0 ? (
-                                            <ul className="divide-y">
-                                                {category.map((cat) => (
-                                                    <li key={cat.id} className="p-4 flex justify-between items-center hover:bg-gray-100">
-                                                        <span className="font-medium">{cat.name}</span>
-                                                        <div>
-                                                            <button
-                                                                type="button"
-                                                                className="text-indigo-600 hover:text-indigo-800 hover:cursor-pointer mr-3"
-                                                                onClick={() => handleEditCategory(cat)}
-                                                            >
-                                                                Editar
-                                                            </button>
-                                                            <button
-                                                                type="button"
-                                                                className="text-red-600 hover:text-red-800 hover:cursor-pointer"
-                                                                onClick={() => handleDeleteCategory(cat.id)}
-                                                            >
-                                                                Excluir
-                                                            </button>
-                                                        </div>
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        ) : (
-                                            <p className="p-4 text-gray-500 text-center">Nenhuma categoria cadastrada</p>
-                                        )}
-                                    </div>
-                                </div>
-                            </form>
-                        )}
-
-                    </div>
+        <div className="max-w-md mx-auto mt-16 p-6  bg-white rounded-xl shadow-lg">
+            <h1 className="text-2xl font-semibold mb-4 text-center">Criar conta</h1>
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                <div>
+                    <label className="block text-sm font-medium mb-1">Nome</label>
+                    <input {...register("name")} className="w-full border rounded px-3 py-2" />
+                    {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>}
                 </div>
-            </div>
+
+                <div>
+                    <label className="block text-sm font-medium mb-1">
+                        Email
+                    </label>
+                    <input type="email" {...register("email")} className="w-full border rounded px-3 py-2" />
+                    {errors.email &&
+                        <p className="text-red-500 text-sm mt-1">
+                            {errors.email.message}
+                        </p>}
+                </div>
+
+                <div>
+                    <label className="block text-sm font-medium mb-1">Senha</label>
+                    <input type="password" {...register("password")} className="w-full border rounded px-3 py-2" />
+                    {errors.password &&
+                        <p className="text-red-500 text-sm mt-1">
+                            {errors.password.message}
+                        </p>}
+                </div>
+
+                <div>
+                    <label className="block text-sm font-medium mb-1">Confirmar senha</label>
+                    <input type="password" {...register("confirmPassword")} className="w-full border rounded px-3 py-2" />
+                    {errors.confirmPassword && (
+                        <p className="text-red-500 text-sm mt-1">{errors.confirmPassword.message}</p>
+                    )}
+                </div>
+
+                <div>
+                    <button
+                        type="submit"
+                        disabled={loading}
+                        className="group relative w-full flex justify-center py-2 px-4 border hover:cursor-pointer hover:scale-105 border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+                    >
+                        {loading ? "Cadastrando..." : "Criar conta"}
+                    </button>
+                </div>
+
+                <div className="text-center text-sm">
+                    <a href="/login" className="text-blue-600 hover:underline">
+                        Já tem conta? Faça login
+                    </a>
+                </div>
+            </form>
         </div>
     );
 }
