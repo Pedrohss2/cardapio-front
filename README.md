@@ -33,7 +33,7 @@ Este é um projeto Next.js criado com [`create-next-app`](https://nextjs.org/doc
 ![Tela de registrar conta](/public/criar-conta.png)
 
 ### Tela de registrar produto
-![Tela de registrar produto](/public/registro-cardapio.png)
+![Tela de registrar produto](/public/resgistro-cardapio.png)
 
 ### Tela de registrar categoria
 ![Tela de registrar categoria](/public/registro-categoria.png)
