@@ -27,16 +27,16 @@ Este é um projeto Next.js criado com [`create-next-app`](https://nextjs.org/doc
 ## Imagens do Projeto
 
 ### Tela de login
-![Tela de fazer login](/login.png)
+![Tela de fazer login](/public/login.png)
 
 ### Tela de criar conta
-![Tela de registrar conta](/criar-conta.png)
+![Tela de registrar conta](/public/criar-conta.png)
 
 ### Tela de registrar produto
-![Tela de registrar produto](/registro-cardapio.png)
+![Tela de registrar produto](/public/registro-cardapio.png)
 
 ### Tela de registrar categoria
-![Tela de registrar categoria](/registro-categoria.png)
+![Tela de registrar categoria](/public/registro-categoria.png)
 
 ### Tela de produtos
-![Tela de produtos](/produtos.png)
+![Tela de produtos](/public/produtos.png)
