@@ -5,22 +5,23 @@ export class ProductService {
 
     async createProduct(data: Product, image?: File): Promise<Product> {
         try {
+            const formData = new FormData();
+
             if (image) {
-                const formData = new FormData();
                 formData.append('image', image);
-
-                formData.append('name', data.name);
-                formData.append('description', data.description);
-                formData.append('price', String(data.price));
-                formData.append('categoryId', data.categoryId);
-
-                const response = await api.post("/product", formData)
-
-                return response.data;
-            } else {
-                const response = await api.post("/product", data);
-                return response.data;
             }
+
+            formData.append('name', data.name);
+            formData.append('description', data.description);
+            formData.append('price', String(data.price));
+            formData.append('categoryId', data.categoryId);
+            formData.append('companyId', data.companyId);
+
+            const response = await api.post("/product", formData, {
+                headers: { "Content-Type": "multipart/form-data" }
+            });
+
+            return response.data;
         } catch (error: any) {
             console.error("Erro ao criar o produto:", error);
             throw new Error(error.response?.data?.message || "Erro ao criar o produto");

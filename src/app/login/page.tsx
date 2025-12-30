@@ -1,56 +1,66 @@
-
 'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { LoginUser, User } from '@/src/interfaces';
+import { User } from '@/src/interfaces';
 import { UserService } from '@/src/services/userService';
-import { MdLogin, MdOutlineMailOutline } from "react-icons/md";
-import { RiLockPasswordLine } from 'react-icons/ri';
 import { useAuth } from '@/src/contexts/AuthContext';
-import { FaRegEyeSlash, FaRegEye } from 'react-icons/fa';
 import Button from '@/src/components/Button';
+import { Input } from '@/src/components/Input';
+import Link from 'next/link';
 import Swal from 'sweetalert2';
+import { jwtDecode } from 'jwt-decode';
 
 export default function AuthForm() {
     const router = useRouter();
     const userService = new UserService();
     const { login } = useAuth();
 
-    const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');
-    const [error, setError] = useState('');
-    const [success, setSuccess] = useState(false);
     const [loading, setLoading] = useState(false);
-    const [showPassowrd, setShowPassword] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
-        setError('');
 
         try {
-
-            const userData: User = {
-                name,
-                email,
-                password,
-            };
-
+            const userData = { email, password };
             const response = await userService.loginUser(userData);
 
-            setSuccess(true);
-            login(response);
+            if (response.access_token) {
+                const token = response.access_token;
+                const decoded: any = jwtDecode(token);
 
-            router.push('/products/')
+                // Fetch companies
+                const companies = await userService.getUserCompanies(decoded.sub);
 
-            setName('');
-            setPassword('');
-            setConfirmPassword('');
+                // Default to first company if available
+                // Note: The backend logic for 'activeCompanyId' prioritizes 'companyId' passed in login or first linked.
+                // Since this login form doesn't ask for companyId, backend uses first linked.
+                // We mirror this on frontend state.
+                const userCompany = companies.length > 0 ? companies[0].company : null;
+
+                login(token, userCompany);
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Bem-vindo!',
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 3000,
+                    timerProgressBar: true,
+                });
+
+                router.push('/products');
+            }
         } catch (err: any) {
-            Swal.fire({ icon: "error", title: "Erro", text: "Email ou senha incorretos." });
+            Swal.fire({
+                icon: "error",
+                title: "Erro de Autenticação",
+                text: "Email ou senha incorretos."
+            });
             console.error('Auth error:', err);
         } finally {
             setLoading(false);
@@ -58,115 +68,65 @@ export default function AuthForm() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50">
-            <div className="max-w-md w-full space-y-8 p-10 bg-white rounded-xl shadow-lg">
-                <div>
-                    <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-                        Entre em sua conta
-                    </h2>
-                </div>
-                <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-                    {error && (
-                        <div className="rounded-md bg-red-50 p-4">
-                            <div className="text-sm text-red-700">{error}</div>
-                        </div>
-                    )}
-                    {success && (
-                        <div className="rounded-md bg-green-50 p-4">
-                            <div className="text-sm text-green-700">{success}</div>
-                        </div>
-                    )}
+        <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+            <div className="flex w-full max-w-4xl bg-white rounded-2xl shadow-xl overflow-hidden min-h-[500px]">
 
-                    <div className='flex items-center justify-center gap-2'>
-                        <MdOutlineMailOutline size={30} />
-                        <label htmlFor="email-address" className="sr-only">
-                            <div>
-                                Email
-                            </div>
-                        </label>
-                        <input
-                            id="email-address"
-                            name="email"
+                <div className="hidden md:flex flex-col justify-center items-center w-1/2 bg-gradient-to-br from-indigo-600 to-purple-700 p-10 text-white relative overflow-hidden">
+                    <div className="z-10 text-center">
+                        <h2 className="text-3xl font-bold mb-4">Bem-vindo de volta!</h2>
+                        <p className="opacity-90 max-w-xs mx-auto mb-8">
+                            Acesse seu painel para gerenciar produtos, pedidos e muito mais.
+                        </p>
+                        <div className="glass p-6 rounded-xl inline-block transform -rotate-3 hover:rotate-0 transition-transform duration-300">
+                            <span className="text-4xl">🚀</span>
+                        </div>
+                    </div>
+                    <div className="absolute top-0 left-0 w-64 h-64 bg-white opacity-5 rounded-full -translate-x-1/2 -translate-y-1/2"></div>
+                    <div className="absolute bottom-0 right-0 w-80 h-80 bg-indigo-500 opacity-10 rounded-full translate-x-1/3 translate-y-1/3"></div>
+                </div>
+
+                <div className="w-full md:w-1/2 p-8 md:p-12 flex flex-col justify-center">
+                    <div className="text-center md:text-left mb-10">
+                        <h2 className="text-2xl font-bold text-gray-900">Login no Sistema</h2>
+                        <p className="text-sm text-gray-500 mt-2">Entre com suas credenciais abaixo.</p>
+                    </div>
+
+                    <form className="space-y-6" onSubmit={handleSubmit}>
+                        <Input
+                            label="Email"
                             type="email"
-                            autoComplete="email"
-                            required
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                            placeholder="Endereço e email"
+                            required
+                            placeholder="seu@email.com"
                         />
-                    </div>
 
-                    <div className='flex items-center justify-center gap-2 w-full'>
-                        <RiLockPasswordLine size={35} />
-                        <label htmlFor="password" className="sr-only">
-                            Senha
-                        </label>
+                        <Input
+                            label="Senha"
+                            type="password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            required
+                            placeholder="••••••••"
+                        />
 
-                        <div className="relative w-full">
-                            <input
-                                id="password"
-                                name="password"
-                                type={showPassowrd ? 'text' : 'password'}
-                                autoComplete={"current-password"}
-                                required
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                className="appearance-none rounded-md relative block w-full px-3 py-2 pr-10 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                                placeholder="Password"
-                            />
-
-                            {showPassowrd ? (
-                                <button
-                                    type="button"
-                                    onClick={() => setShowPassword(!showPassowrd)}
-                                    className="absolute right-3 top-1/2 h-10 w-10 flex items-center justify-center transform -translate-y-1/2 text-gray-500 cursor-pointer z-20"
-                                >
-                                    <FaRegEye />
-                                </button>
-                            ) : (
-                                <button
-                                    type="button"
-                                    onClick={() => setShowPassword(!showPassowrd)}
-                                    className="absolute right-3 top-1/2 h-10 w-10 flex items-center justify-center transform -translate-y-1/2 text-gray-500 cursor-pointer z-20"
-                                >
-                                    <FaRegEyeSlash />
-                                </button>
-                            )}
-                        </div>
-
-                    </div>
-
-                    <div>
-                        <button
+                        <Button
+                            text="Entrar"
                             type="submit"
-                            disabled={loading}
-                            className="group relative w-full flex justify-center py-2 px-4 border hover:cursor-pointer hover:scale-105 border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
-                        >
-                            {loading ? (
-                                <span>Processing...</span>
-                            ) : <span className='flex items-center gap-2'>
-                                <MdLogin size={25} />
-                                Entrar
-                            </span>}
-                        </button>
+                            fullWidth
+                            isLoading={loading}
+                        />
 
-                        <div className='text-center mt-4'>
-
-                            <p>
-                                Não possui uma conta?{' '}
-                                <a
-                                    href="/register"
-                                    className="font-medium text-indigo-600 hover:text-indigo-500"
-                                >
-                                    Registre-se
-                                </a>
+                        <div className="text-center mt-6">
+                            <p className="text-sm text-gray-600">
+                                Ainda não tem uma empresa?{' '}
+                                <Link href="/register-company" className="font-medium text-indigo-600 hover:text-indigo-500">
+                                    Cadastre-se aqui
+                                </Link>
                             </p>
                         </div>
-                    </div>
-                </form>
-
-
+                    </form>
+                </div>
             </div>
         </div>
     );

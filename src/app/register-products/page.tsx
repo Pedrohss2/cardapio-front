@@ -1,423 +1,300 @@
-"use client"
+'use client';
 
-import Header from "@/src/components/Header";
-import { CategoryService } from "@/src/services/categoryService";
-import { ProductService } from "@/src/services/productService";
-import { useEffect, useState, useRef } from "react";
-import Swal from 'sweetalert2'
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod";
-import { productFormSchema, ProductSchema } from "@/src/schemas/formSchema";
-import { error } from "console";
-import { Product } from "@/src/interfaces";
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { ProductService } from '@/src/services/productService';
+import { CategoryService } from '@/src/services/categoryService';
+import { Category, Product } from '@/src/interfaces';
+import { useAuth } from '@/src/contexts/AuthContext';
+import { Input } from '@/src/components/Input';
+import Button from '@/src/components/Button';
+import Swal from 'sweetalert2';
+import { MdCloudUpload, MdClose, MdAdd } from 'react-icons/md';
 
-export default function Register() {
-    const categoryService = new CategoryService();
+export default function RegisterProduct() {
+    const router = useRouter();
+    const { company, isAuthenticated } = useAuth();
     const productService = new ProductService();
+    const categoryService = new CategoryService();
 
-    const { register, handleSubmit, formState: { errors } } = useForm<ProductSchema>({
-        resolver: zodResolver(productFormSchema)
-    })
-
-    const [category, setCategories] = useState<any[]>([])
-    const [image, setImage] = useState<File | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
+    const [categories, setCategories] = useState<Category[]>([]);
     const [imagePreview, setImagePreview] = useState<string | null>(null);
-    const [activeTab, setActiveTab] = useState<'product' | 'category'>('product');
-    const [editingCategory, setEditingCategory] = useState<{ id: string, name: string } | null>(null);
-    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [selectedFile, setSelectedFile] = useState<File | undefined>(undefined);
 
-    const [formProduct, setFormProduct] = useState({
-        name: "",
-        description: "",
-        imagem: "",
-        price: "",
-        category: "",
+    // Modal state
+    const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+    const [newCategoryName, setNewCategoryName] = useState('');
+    const [isCreatingCategory, setIsCreatingCategory] = useState(false);
+
+    const [formData, setFormData] = useState({
+        name: '',
+        price: '',
+        description: '',
+        categoryId: ''
     });
-
-    const [formCategory, setFormCategory] = useState({
-        name: "",
-    });
-
-    const handleChangeProduct = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-        const { id, value } = e.target;
-        setFormProduct((prev) => ({ ...prev, [id]: value }));
-    };
-
-    const handleChangeCategory = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const { id, value } = e.target;
-        setFormCategory((prev) => ({ ...prev, [id]: value }));
-    };
-
-    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files[0]) {
-            const file = e.target.files[0];
-            setImage(file);
-
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                setImagePreview(e.target?.result as string);
-            };
-            reader.readAsDataURL(file);
-        }
-    };
-
-    const triggerFileInput = () => {
-        fileInputRef.current?.click();
-    };
-
-    const removeImage = () => {
-        setImage(null);
-        setImagePreview(null);
-        if (fileInputRef.current) {
-            fileInputRef.current.value = '';
-        }
-    };
 
     useEffect(() => {
-        const fetchCategories = async () => {
-            try {
-                categoryService.get().then((data: any) => {
-                    setCategories(data)
-                })
-            } catch (error: any) {
-                console.log(error)
-            }
+        if (!isAuthenticated) {
+            router.push('/login');
+            return;
         }
-        fetchCategories()
-    }, [])
+        loadCategories();
+    }, [isAuthenticated]);
 
+    const loadCategories = async () => {
+        try {
+            const data = await categoryService.get();
+            setCategories(data);
+        } catch (error) {
+            console.error("Failed to load categories", error);
+        }
+    };
 
-    const submitCategory = async (e: React.FormEvent) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            const file = e.target.files[0];
+            setSelectedFile(file);
+            setImagePreview(URL.createObjectURL(file));
+        }
+    };
+
+    const handleCreateCategory = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!newCategoryName.trim()) return;
 
-        const categoryData = {
-            name: formCategory.name,
-        };
-        if (categoryData.name === '') {
-            alert('Por favor, preencha um valor no campo de nome da categoria.');
+        setIsCreatingCategory(true);
+        try {
+            const newCategory = await categoryService.create({ name: newCategoryName });
+            setCategories(prev => [...prev, newCategory]);
+            setFormData(prev => ({ ...prev, categoryId: newCategory.id || '' }));
+            setIsCategoryModalOpen(false);
+            setNewCategoryName('');
+            Swal.fire({ icon: 'success', title: 'Categoria criada!', toast: true, position: 'top-end', showConfirmButton: false, timer: 2000 });
+        } catch (error) {
+            Swal.fire({ icon: 'error', title: 'Erro', text: 'Erro ao criar categoria' });
+        } finally {
+            setIsCreatingCategory(false);
+        }
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!company) {
+            Swal.fire({ icon: 'error', title: 'Erro', text: 'Empresa não identificada.' });
             return;
         }
 
-        const service = new CategoryService();
+        setIsLoading(true);
 
         try {
-            if (editingCategory) {
-                await service.update(editingCategory.id, categoryData);
-                setEditingCategory(null);
-            } else {
-                await service.create(categoryData);
-            }
-            setFormCategory({
-                name: "",
+            const productData: Product = {
+                name: formData.name,
+                description: formData.description,
+                price: parseFloat(formData.price),
+                categoryId: formData.categoryId,
+                companyId: company.id
+            };
+
+            await productService.createProduct(productData, selectedFile);
+
+            Swal.fire({
+                icon: 'success',
+                title: 'Sucesso!',
+                text: 'Produto cadastrado com sucesso!',
+                showConfirmButton: false,
+                timer: 1500
             });
 
-            const updatedCategories = await categoryService.get();
-            setCategories(updatedCategories);
-        } catch (error) {
-            console.log("Error", error)
-        }
-    }
-
-    const showAllertSuccess = () => {
-        Swal.fire({
-            icon: "success",
-            title: "Produto cadastrado com sucesso!",
-            showConfirmButton: false,
-            timer: 4000
-        });
-    }
-
-    const showAllertError = () => {
-        Swal.fire({
-            icon: "error",
-            title: "Oops...",
-            text: "Algo deu errado, tente novamente!",
-        });
-    }
-
-    const submitProduct = async (data: ProductSchema) => {
-        const productData = {
-            name: data.name,
-            description: data.description,
-            price: parseFloat(formProduct.price), 
-            categoryId: data.categoryId,
-        };
-
-        try {
-            await productService.createProduct(productData, image || undefined);
-            
-            setFormProduct({
-                name: "",
-                description: "",
-                imagem: "",
-                price: "",
-                category: "",
+            router.push('/products');
+        } catch (error: any) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Erro',
+                text: error.message || 'Erro ao cadastrar produto'
             });
-            
-            setImage(null);
-            setImagePreview(null);
-            
-            showAllertSuccess()
-            
-            if (fileInputRef.current) {
-                fileInputRef.current.value = '';
-            }
-        } catch (error) {
-            showAllertError()
-            console.log("Error", error)
+        } finally {
+            setIsLoading(false);
         }
-    }
-    
-    const handleEditCategory = (cat: { id: string, name: string }) => {
-        setEditingCategory(cat);
-        setFormCategory({
-            name: cat.name,
-        });
-    }
-
-    const handleDeleteCategory = async (id: string) => {
-        if (window.confirm("Tem certeza que deseja excluir esta categoria?")) {
-            try {
-                await categoryService.deleteCategory(id);
-
-                const updatedCategories = await categoryService.get();
-                setCategories(updatedCategories);
-            } catch (error) {
-                console.log("Error deleting category", error);
-                alert("Erro ao excluir categoria");
-            }
-        }
-    }
-
-    const cancelEdit = () => {
-        setEditingCategory(null);
-        setFormCategory({
-            name: "",
-        });
-    }
+    };
 
     return (
-        <div className="pt-10">
-            <Header />
-            <div className="min-h-screen bg-gradient-to-br mt-10 from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-                <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden">
-                    <div className="bg-indigo-600 py-6 px-8 text-center">
-                        <h1 className="text-3xl font-bold text-white">Cadastrar</h1>
-                        <p className="text-indigo-200 mt-2">Adicionar novos produtos e categorias</p>
+        <div className="min-h-screen bg-gray-50 pt-24 pb-12 px-4 sm:px-6 lg:px-8 relative">
+            <div className="max-w-4xl mx-auto">
+                <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
+                    <div className="bg-gradient-to-r from-indigo-600 to-purple-600 px-8 py-6">
+                        <h1 className="text-2xl font-bold text-white flex items-center gap-2">
+                            <span className="text-3xl">+</span> Novo Produto
+                        </h1>
+                        <p className="text-indigo-100 mt-2">Adicione itens ao seu cardápio digital</p>
                     </div>
 
-                    <div className="flex border-b">
-                        <button
-                            className={`flex-1 py-4 text-2xl hover:cursor-pointer font-medium ${activeTab === 'product' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-500'}`}
-                            onClick={() => setActiveTab('product')}
-                        >
-                            Produto
-                        </button>
-                        <button
-                            className={`flex-1 text-2xl py-4 hover:cursor-pointer font-medium ${activeTab === 'category' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-500'}`}
-                            onClick={() => setActiveTab('category')}
-                        >
-                            Categoria
-                        </button>
-                    </div>
+                    <form onSubmit={handleSubmit} className="p-8 space-y-8">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
 
-                    <div className="py-6 px-8">
-                        {activeTab === 'product' && (
-                            <form onSubmit={handleSubmit(submitProduct)}>
-                                <div className="mb-5">
-                                    <label className=" text-gray-700 text-sm font-bold mb-2" htmlFor="name">
-                                        Produto
-                                    </label>
-                                    <input
-                                        id="name"
-                                        type="text"
-                                        {...register("name")}
-                                        value={formProduct.name}
-                                        onChange={handleChangeProduct}
-                                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                                        placeholder="Nome do produto"
-                                    />
-                                    {errors.name && <p className="text-red-500 text-sm">{errors.name.message}</p>}
-                                </div>
-                                <div className="mb-5">
-                                    <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="description">
-                                        Descrição
-                                    </label>
-                                    <input
-                                        id="description"
-                                        {...register("description")}
-                                        type="text"
-                                        value={formProduct.description}
-                                        onChange={handleChangeProduct}
-                                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                                        placeholder="Descrição do produto"
-                                    />
-                                    {errors.description && <p className="text-red-500 text-sm">{errors.description.message}</p>}
-                                </div>
+                            <div className="space-y-4">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Imagem do Produto</label>
+                                <div className={`border-2 border-dashed rounded-xl p-6 flex flex-col items-center justify-center min-h-[300px] transition-all
+                                    ${imagePreview ? 'border-indigo-500 bg-indigo-50' : 'border-gray-300 hover:border-indigo-400 hover:bg-gray-50'}`}>
 
-                                <div className="mb-5">
-                                    <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="category">
-                                        Categoria
-                                    </label>
-                                    <select
-                                        id="category"
-                                        {...register("categoryId")}
-                                        value={formProduct.category}
-                                        onChange={handleChangeProduct}
-                                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                                    >
-                                        <option value="" className="hover:cursor-pointer">Selecione uma categoria</option>
-                                        {
-                                            category.map((valor) => (
-                                                <option key={valor.id} value={valor.id} className="cursor-pointer">{valor.name}</option>
-                                            ))
-                                        }
-                                    </select>
-                                    {errors.categoryId && <p className="text-red-500 text-sm">{errors.categoryId.message}</p>}
-                                </div>
-
-                                <div className="mb-5">
-                                    <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="price">
-                                        Preço (R$)
-                                    </label>
-                                    <input
-                                        id="price"
-                                        type="number"
-                                        step="0.01"
-                                        value={formProduct.price}
-                                        onChange={handleChangeProduct}
-                                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                                        placeholder="0.00"
-                                    />
-                                </div>
-
-                                <div className="mb-5">
-                                    <label className="block text-gray-700 text-sm font-bold mb-2">
-                                        Imagem do Produto
-                                    </label>
-                                    <input
-                                        type="file"
-                                        {...register("image")}
-                                        ref={fileInputRef}
-                                        onChange={handleImageChange}
-                                        accept="image/*"
-                                        className="hidden"
-                                    />
-                                    {errors.image && <p className="text-red-500 text-sm">{errors.image.message}</p>}
-                                    {!imagePreview ? (
-                                        <div
-                                            onClick={triggerFileInput}
-                                            className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-indigo-400 transition"
-                                        >
-                                            <div className="text-indigo-600 mx-auto mb-2">
-                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                                </svg>
-                                            </div>
-                                            <p className="text-gray-600">Clique para selecionar uma imagem</p>
-                                            <p className="text-gray-400 text-sm mt-1">PNG, JPG, GIF até 10MB</p>
-                                        </div>
-
-                                    ) : (
-                                        <div className="relative">
-                                            <img
-                                                src={imagePreview}
-                                                alt="Preview"
-                                                className="rounded-lg w-full h-48 object-cover border border-gray-300"
-                                            />
+                                    {imagePreview ? (
+                                        <div className="relative w-full h-full flex flex-col items-center">
+                                            <img src={imagePreview} alt="Preview" className="max-h-64 rounded-lg object-contain shadow-sm mb-4" />
                                             <button
                                                 type="button"
-                                                onClick={removeImage}
-                                                className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                                                onClick={() => { setImagePreview(null); setSelectedFile(undefined); }}
+                                                className="text-red-500 hover:text-red-700 text-sm font-medium"
                                             >
-                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                                                </svg>
+                                                Remover Imagem
                                             </button>
                                         </div>
+                                    ) : (
+                                        <label htmlFor="image-upload" className="cursor-pointer flex flex-col items-center text-center">
+                                            <div className="bg-indigo-100 p-4 rounded-full mb-4">
+                                                <MdCloudUpload className="text-indigo-600 text-3xl" />
+                                            </div>
+                                            <span className="text-indigo-600 font-medium text-lg">Clique para upload</span>
+                                            <span className="text-gray-500 text-sm mt-2">PNG, JPG até 5MB</span>
+                                            <input
+                                                id="image-upload"
+                                                type="file"
+                                                className="hidden"
+                                                accept="image/*"
+                                                onChange={handleFileChange}
+                                            />
+                                        </label>
                                     )}
                                 </div>
+                            </div>
 
-                                <button
-                                    type="submit"
-                                    className="w-full bg-indigo-600 hover:cursor-pointer hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg shadow-md hover:shadow-lg transition duration-300 ease-in-out transform hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50"
-                                >
-                                    Registrar produto
-                                </button>
-                            </form>
-                        )}
+                            <div className="space-y-6">
+                                <Input
+                                    label="Nome do Produto"
+                                    name="name"
+                                    value={formData.name}
+                                    onChange={handleChange}
+                                    required
+                                    placeholder="Ex: X-bacon Supremo"
+                                />
 
-                        {activeTab === 'category' && (
-                            <form onSubmit={submitCategory}>
-                                <div className="mb-5">
-                                    <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="categoryName">
-                                        {editingCategory ? "Editar Categoria" : "Nova Categoria"}
-                                    </label>
-                                    <input
-                                        id="name"
-                                        type="text"
-                                        value={formCategory.name}
-                                        onChange={handleChangeCategory}
-                                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                                        placeholder="Nome da categoria"
+                                <div className="grid grid-cols-2 gap-4">
+                                    <Input
+                                        label="Preço (R$)"
+                                        name="price"
+                                        type="number"
+                                        step="0.01"
+                                        value={formData.price}
+                                        onChange={handleChange}
+                                        required
+                                        placeholder="0.00"
                                     />
-                                </div>
-                                <div className="flex gap-2">
-                                    <button
-                                        type="submit"
-                                        className="flex-1 bg-indigo-600 hover:scale-105 hover:cursor-pointer hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg shadow-md hover:shadow-lg transition duration-300 ease-in-out transform hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50"
-                                    >
-                                        {editingCategory ? "Atualizar" : "Registrar"} categoria
-                                    </button>
-                                    {editingCategory && (
-                                        <button
-                                            type="button"
-                                            onClick={cancelEdit}
-                                            className="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-4 rounded-lg shadow-md hover:shadow-lg transition duration-300 ease-in-out transform hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50"
-                                        >
-                                            Cancelar
-                                        </button>
-                                    )}
-                                </div>
 
-                                <div className="mt-8">
-                                    <h3 className="text-lg font-semibold text-gray-800 mb-4">Categorias</h3>
-                                    <div className="border rounded-lg">
-                                        {category.length > 0 ? (
-                                            <ul className="divide-y">
-                                                {category.map((cat) => (
-                                                    <li key={cat.id} className="p-4 flex justify-between items-center hover:bg-gray-100">
-                                                        <span className="font-medium">{cat.name}</span>
-                                                        <div>
-                                                            <button
-                                                                type="button"
-                                                                className="text-indigo-600 hover:text-indigo-800 hover:cursor-pointer mr-3"
-                                                                onClick={() => handleEditCategory(cat)}
-                                                            >
-                                                                Editar
-                                                            </button>
-                                                            <button
-                                                                type="button"
-                                                                className="text-red-600 hover:text-red-800 hover:cursor-pointer"
-                                                                onClick={() => handleDeleteCategory(cat.id)}
-                                                            >
-                                                                Excluir
-                                                            </button>
-                                                        </div>
-                                                    </li>
+                                    <div className="w-full">
+                                        <div className="flex justify-between items-center mb-1">
+                                            <label className="block text-sm font-medium text-gray-700">Categoria</label>
+                                            <button
+                                                type="button"
+                                                onClick={() => setIsCategoryModalOpen(true)}
+                                                className="text-xs text-indigo-600 hover:text-indigo-800 font-medium flex items-center gap-1"
+                                            >
+                                                <MdAdd /> Nova Categoria
+                                            </button>
+                                        </div>
+                                        <div className="relative">
+                                            <select
+                                                name="categoryId"
+                                                value={formData.categoryId}
+                                                onChange={handleChange}
+                                                required
+                                                className="appearance-none w-full px-4 py-2 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all cursor-pointer"
+                                            >
+                                                <option value="">Selecione...</option>
+                                                {categories.map(cat => (
+                                                    <option key={cat.id} value={cat.id || ''}>{cat.name}</option>
                                                 ))}
-                                            </ul>
-                                        ) : (
-                                            <p className="p-4 text-gray-500 text-center">Nenhuma categoria cadastrada</p>
-                                        )}
+                                            </select>
+                                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                                                <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" /></svg>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
-                            </form>
-                        )}
 
-                    </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Descrição</label>
+                                    <textarea
+                                        name="description"
+                                        rows={4}
+                                        value={formData.description}
+                                        onChange={handleChange}
+                                        className="w-full px-4 py-2 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all resize-none"
+                                        placeholder="Descreva os ingredientes e detalhes deliciosos..."
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="pt-6 border-t border-gray-100 flex justify-end gap-4">
+                            <Button
+                                text="Cancelar"
+                                className='cursor-pointer'
+                                variant="secondary"
+                                onClick={() => router.back()}
+                            />
+                            <Button
+                                text="Salvar Produto"
+                                type="submit"
+                                className='cursor-pointer'
+                                isLoading={isLoading}
+                                variant="primary"
+                            />
+                        </div>
+                    </form>
                 </div>
             </div>
+
+            {isCategoryModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in duration-200">
+                        <div className="bg-indigo-600 px-6 py-4 flex justify-between items-center text-white">
+                            <h3 className="font-bold text-lg">Nova Categoria</h3>
+                            <button onClick={() => setIsCategoryModalOpen(false)} className="hover:bg-white/20 rounded-full p-1 transition-colors">
+                                <MdClose size={20} />
+                            </button>
+                        </div>
+                        <form onSubmit={handleCreateCategory} className="p-6">
+                            <Input
+                                label="Nome"
+                                value={newCategoryName}
+                                onChange={(e) => setNewCategoryName(e.target.value)}
+                                placeholder="Ex: Bebidas"
+                                autoFocus
+                            />
+                            <div className="mt-6 flex justify-end gap-3">
+                                <button
+                                    type="button"
+                                    onClick={() => setIsCategoryModalOpen(false)}
+                                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={isCreatingCategory || !newCategoryName.trim()}
+                                    className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50"
+                                >
+                                    {isCreatingCategory ? 'Criando...' : 'Criar Categoria'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
