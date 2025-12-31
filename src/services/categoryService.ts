@@ -48,7 +48,7 @@ export class CategoryService {
         }
     }
 
-    async deleteCategory(id: string): Promise<Category> {
+    async delete(id: string): Promise<Category> {
         try {
             const response = await api.delete(`/category/${id}`);
             return response.data;

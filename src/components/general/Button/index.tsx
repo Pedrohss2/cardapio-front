@@ -7,6 +7,7 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
     isLoading?: boolean
     variant?: 'primary' | 'secondary' | 'outline'
     fullWidth?: boolean
+    icon?: React.ReactNode
 }
 
 export default function Button({
@@ -19,6 +20,7 @@ export default function Button({
     fullWidth = false,
     className = '',
     disabled,
+    icon,
     ...props
 }: ButtonProps) {
     const baseClasses = "inline-flex items-center justify-center font-medium py-3 px-6 rounded-lg transition-all duration-300 ease-in-out transform hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
@@ -35,6 +37,8 @@ export default function Button({
         <>
             {isLoading ? (
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+            ) : icon ? (
+                <span className="mr-2">{icon}</span>
             ) : null}
             <span>{text}</span>
         </>

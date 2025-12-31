@@ -1,10 +1,8 @@
 import { api } from '@/src/functions/axios';
-import { LoginUser, User } from "../interfaces";
 
 export class UserService {
 
-    async registerUser(data: User): Promise<User> {
-
+    async registerUser(data: any): Promise<any> { // Updated to accept companyId in payload
         try {
             const response = await api.post("/users/register", data);
             return response.data;
@@ -15,10 +13,9 @@ export class UserService {
         }
     }
 
-    async loginUser(data: LoginUser): Promise<{ access_token: string }> {
+    async loginUser(data: any): Promise<{ access_token: string }> {
         try {
             const response = await api.post("/auth/login", data);
-            console.log(response.data);
             return response.data;
         }
         catch (error: any) {
@@ -33,8 +30,32 @@ export class UserService {
             return response.data;
         } catch (error: any) {
             console.error("Erro ao buscar empresas do usuario:", error);
-            // Return empty array if fails or throw
             return [];
+        }
+    }
+
+    async getUsersByCompany(companyId: string): Promise<any[]> {
+        try {
+            const response = await api.get(`/user-company`);
+            const allAssociations = response.data;
+
+            return allAssociations.filter((item: any) => item.companyId === companyId);
+        } catch (error: any) {
+            console.error("Erro ao buscar usuários da empresa:", error);
+            return [];
+        }
+    }
+
+    async associateUserToCompany(userId: string, companyId: string): Promise<any> {
+        try {
+            const response = await api.post("/user-company", {
+                userId,
+                companyId
+            });
+            return response.data;
+        } catch (error: any) {
+            console.error("Erro ao associar usuário à empresa:", error);
+            throw new Error(error.response?.data?.message || "Erro ao associar usuário");
         }
     }
 }

@@ -43,7 +43,6 @@ export default function Settings() {
         try {
             const updatedCompany = await companyService.updateCompany(company.id, formData);
 
-            // Update context
             updateCompanyContext({ ...company, ...updatedCompany });
 
             Swal.fire({
@@ -69,7 +68,6 @@ export default function Settings() {
         <div className="pt-8 min-h-screen bg-gray-50/50">
             <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
 
-                {/* Header */}
                 <div className="flex items-center gap-4 mb-8">
                     <div className="p-3 bg-indigo-100 text-indigo-600 rounded-xl shadow-sm">
                         <MdSettings size={32} />
@@ -80,7 +78,6 @@ export default function Settings() {
                     </div>
                 </div>
 
-                {/* Content */}
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                     <div className="p-8 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">
                         <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">

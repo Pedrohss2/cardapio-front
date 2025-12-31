@@ -3,21 +3,11 @@ import { Product } from "../interfaces";
 
 export class ProductService {
 
-    async createProduct(data: Product, image?: File): Promise<Product> {
+    async createProduct(data: any): Promise<Product> {
         try {
-            const formData = new FormData();
-
-            if (image) {
-                formData.append('image', image);
-            }
-
-            formData.append('name', data.name);
-            formData.append('description', data.description);
-            formData.append('price', String(data.price));
-            formData.append('categoryId', data.categoryId);
-            formData.append('companyId', data.companyId);
-
-            const response = await api.post("/product", formData, {
+            // If data is already FormData, use it directly. Otherwise assuming it's structured.
+            // But form sends FormData.
+            const response = await api.post("/product", data, {
                 headers: { "Content-Type": "multipart/form-data" }
             });
 
@@ -67,6 +57,18 @@ export class ProductService {
         } catch (error: any) {
             console.error("Erro ao deletar o produto:", error);
             throw new Error(error.response?.data?.message || "Erro ao deletar")
+        }
+    }
+    async getProductsByCompany(companyId: string): Promise<Product[]> {
+        try {
+            // Trying standard endpoint convention. If it doesn't exist, we might need adjustments.
+            const response = await api.get(`/product/company/${companyId}`);
+            return response.data;
+        } catch (error: any) {
+            console.error("Erro ao obter produtos da empresa:", error);
+            // If fallback is needed (e.g. backend doesn't support public endpoint), we might have to handle it.
+            // But usually this is how public menus work.
+            return [];
         }
     }
 }

@@ -5,8 +5,8 @@ import { useRouter } from 'next/navigation';
 import { User } from '@/src/interfaces';
 import { UserService } from '@/src/services/userService';
 import { useAuth } from '@/src/contexts/AuthContext';
-import Button from '@/src/components/Button';
-import { Input } from '@/src/components/Input';
+import Button from '@/src/components/general/Button';
+import { Input } from '@/src/components/general/Input';
 import Link from 'next/link';
 import Swal from 'sweetalert2';
 import { jwtDecode } from 'jwt-decode';
@@ -40,8 +40,9 @@ export default function AuthForm() {
                 // Since this login form doesn't ask for companyId, backend uses first linked.
                 // We mirror this on frontend state.
                 const userCompany = companies.length > 0 ? companies[0].company : null;
+                const user = companies.length > 0 ? companies[0].user : null;
 
-                login(token, userCompany);
+                login(token, userCompany, user);
 
                 Swal.fire({
                     icon: 'success',

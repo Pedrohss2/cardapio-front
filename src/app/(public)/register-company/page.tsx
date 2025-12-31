@@ -3,8 +3,8 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { CompanyService, CreateCompanyDto } from '@/src/services/companyService';
-import { Input } from '@/src/components/Input';
-import Button from '@/src/components/Button';
+import { Input } from '@/src/components/general/Input';
+import Button from '@/src/components/general/Button';
 import Link from 'next/link';
 import Swal from 'sweetalert2';
 import { useAuth } from '@/src/contexts/AuthContext';
@@ -52,8 +52,9 @@ export default function RegisterCompany() {
                     const companies = await userService.getUserCompanies(decoded.sub);
 
                     const userCompany = companies.length > 0 ? companies[0].company : null;
+                    const user = companies.length > 0 ? companies[0].user : null;
 
-                    login(token, userCompany);
+                    login(token, userCompany, user);
 
                     Swal.fire({
                         icon: 'success',
@@ -88,7 +89,6 @@ export default function RegisterCompany() {
 
     return (
         <div className="min-h-screen flex flex-col md:flex-row">
-            {/* Left Side - Hero */}
             <div className="hidden md:flex flex-col justify-center p-12 w-1/2 bg-gradient-to-br from-indigo-600 to-purple-700 text-white">
                 <h1 className="text-5xl font-bold mb-6">Comece sua jornada digital</h1>
                 <p className="text-xl opacity-90 mb-8 max-w-md">
@@ -100,7 +100,6 @@ export default function RegisterCompany() {
                 </div>
             </div>
 
-            {/* Right Side - Form */}
             <div className="flex-1 flex items-center justify-center p-6 bg-gray-50">
                 <div className="w-full max-w-md space-y-8 bg-white p-8 rounded-2xl shadow-xl">
                     <div className="text-center">
@@ -127,6 +126,7 @@ export default function RegisterCompany() {
                                 required
                                 placeholder="Rua, Número, Bairro"
                             />
+
                             <div className="grid grid-cols-2 gap-4">
                                 <Input
                                     label="Telefone"
@@ -136,6 +136,7 @@ export default function RegisterCompany() {
                                     required
                                     placeholder="(11) 99999-9999"
                                 />
+
                                 <Input
                                     label="Email (Empresarial)"
                                     name="email"
@@ -157,6 +158,7 @@ export default function RegisterCompany() {
                                 onChange={handleChange}
                                 placeholder="Seu nome completo"
                             />
+
                             <Input
                                 label="Senha de Acesso"
                                 name="ownerPassword"

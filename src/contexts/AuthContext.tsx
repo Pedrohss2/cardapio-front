@@ -12,7 +12,7 @@ interface AuthContextData {
     user: User | null;
     company: Company | null;
     loading: boolean;
-    login: (token: string, company?: Company) => void;
+    login: (token: string, company?: Company, user?: User) => void;
     logout: () => void;
     updateCompany: (company: Company) => void;
 }
@@ -28,19 +28,37 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     useEffect(() => {
         const storedToken = localStorage.getItem("accessToken");
         const storedCompany = localStorage.getItem("company");
+        const storedUser = localStorage.getItem("user");
 
         if (storedToken) {
             setToken(storedToken);
             api.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`;
-            // Optionally fetch user profile here if needed
         }
         if (storedCompany) {
             setCompany(JSON.parse(storedCompany));
         }
+        if (storedUser) {
+            setUser(JSON.parse(storedUser));
+        }
         setLoading(false);
+
+        // Axios Interceptor for 401 handling
+        const interceptorId = api.interceptors.response.use(
+            (response) => response,
+            (error) => {
+                if (error.response && error.response.status === 401) {
+                    logout();
+                }
+                return Promise.reject(error);
+            }
+        );
+
+        return () => {
+            api.interceptors.response.eject(interceptorId);
+        };
     }, []);
 
-    const login = (accessToken: string, companyData?: Company) => {
+    const login = (accessToken: string, companyData?: Company, userData?: User) => {
         localStorage.setItem("accessToken", accessToken);
         setToken(accessToken);
         api.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
@@ -54,6 +72,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             localStorage.setItem("company", JSON.stringify(companyData));
             setCompany(companyData);
         }
+
+        if (userData) {
+            localStorage.setItem("user", JSON.stringify(userData));
+            setUser(userData);
+        }
     };
 
     const updateCompany = (companyData: Company) => {
@@ -64,6 +87,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const logout = () => {
         localStorage.removeItem("accessToken");
         localStorage.removeItem("company");
+        localStorage.removeItem("user");
         setToken(null);
         setCompany(null);
         setUser(null);

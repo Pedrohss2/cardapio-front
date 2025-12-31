@@ -4,10 +4,10 @@ import { useAuth } from "@/src/contexts/AuthContext"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { useState, useEffect } from "react"
-import { MdLogout, MdBusiness, MdMenu, MdClose, MdDashboard, MdInventory, MdAddBox, MdPersonAdd, MdCategory, MdSettings, MdChevronLeft, MdChevronRight } from "react-icons/md"
+import { MdLogout, MdBusiness, MdMenu, MdClose, MdDashboard, MdInventory, MdAddBox, MdPersonAdd, MdCategory, MdSettings, MdChevronLeft, MdChevronRight, MdPerson } from "react-icons/md"
 
 export default function Header() {
-    const { isAuthenticated, logout, company, loading } = useAuth()
+    const { isAuthenticated, logout, company, user, loading } = useAuth()
     const pathname = usePathname();
     const router = useRouter();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -35,10 +35,10 @@ export default function Header() {
 
     const navLinks = [
         { href: '/dashboard', label: 'Dashboard', icon: <MdDashboard size={24} /> },
-        { href: '/products', label: 'Produtos', icon: <MdInventory size={24} /> },
+        { href: '/products', label: 'Cardápio', icon: <MdInventory size={24} /> },
         { href: '/register-products', label: 'Novo Produto', icon: <MdAddBox size={24} /> },
-        { href: '/register-user', label: 'Equipe', icon: <MdPersonAdd size={24} /> },
         { href: '/register-category', label: 'Categorias', icon: <MdCategory size={24} /> },
+        { href: '/register-user', label: 'Equipe', icon: <MdPersonAdd size={24} /> },
         { href: '/settings', label: 'Configurações', icon: <MdSettings size={24} /> },
     ];
 
@@ -59,7 +59,6 @@ export default function Header() {
 
     return (
         <>
-            {/* Desktop Sidebar */}
             <aside
                 data-collapsed={isCollapsed}
                 className={`hidden md:flex flex-col fixed inset-y-0 left-0 bg-white border-r border-gray-100 shadow-xl z-50 transition-all duration-300 ${isCollapsed ? 'w-20' : 'w-64'}`}
@@ -72,21 +71,33 @@ export default function Header() {
                     )}
                     <button
                         onClick={toggleSidebar}
-                        className={`p-2 rounded-lg text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors ${isCollapsed ? 'mx-auto' : ''}`}
+                        className={`p-2 rounded-lg cursor-pointer text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors ${isCollapsed ? 'mx-auto' : ''}`}
                     >
                         {isCollapsed ? <MdChevronRight size={24} /> : <MdChevronLeft size={24} />}
                     </button>
                 </div>
 
-                <div className={`px-4 py-4 ${isCollapsed ? 'px-2' : ''}`}>
+                <div className={`px-4 py-4 ${isCollapsed ? 'px-2' : ''} space-y-3`}>
                     {company && !isCollapsed && (
-                        <div className="mb-6 flex items-center gap-3 p-3 bg-gray-50 rounded-xl overflow-hidden animate-in fade-in duration-300">
+                        <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl overflow-hidden animate-in fade-in duration-300">
                             <div className="bg-white p-1.5 rounded-lg shadow-sm shrink-0">
                                 <MdBusiness className="text-indigo-600" />
                             </div>
                             <div className="overflow-hidden">
                                 <p className="text-xs text-gray-500 font-medium uppercase tracking-wider">Loja</p>
                                 <p className="font-semibold text-gray-900 truncate text-sm">{company.name}</p>
+                            </div>
+                        </div>
+                    )}
+
+                    {user && !isCollapsed && (
+                        <div className="flex items-center gap-3 p-3 bg-indigo-50/50 rounded-xl overflow-hidden animate-in fade-in duration-300 border border-indigo-100/50">
+                            <div className="bg-white p-1.5 rounded-lg shadow-sm shrink-0 text-indigo-600">
+                                <MdPerson size={16} />
+                            </div>
+                            <div className="overflow-hidden">
+                                <p className="text-xs text-indigo-400 font-medium uppercase tracking-wider">Usuário</p>
+                                <p className="font-semibold text-gray-900 truncate text-sm">{user.name}</p>
                             </div>
                         </div>
                     )}
@@ -157,13 +168,25 @@ export default function Header() {
             {isMobileMenuOpen && (
                 <div className="md:hidden fixed inset-0 z-40 bg-white pt-20 px-6 animate-in slide-in-from-right-10 duration-200">
                     {company && (
-                        <div className="mb-8 p-4 bg-gray-50 rounded-xl flex items-center gap-3">
+                        <div className="mb-4 p-4 bg-gray-50 rounded-xl flex items-center gap-3">
                             <div className="bg-white p-2 rounded-lg shadow-sm">
                                 <MdBusiness className="text-indigo-600 text-xl" />
                             </div>
                             <div>
                                 <p className="text-xs text-gray-500 font-medium uppercase tracking-wider">Empresa</p>
                                 <p className="font-semibold text-gray-900">{company.name}</p>
+                            </div>
+                        </div>
+                    )}
+
+                    {user && (
+                        <div className="mb-8 p-4 bg-indigo-50/50 border border-indigo-100/50 rounded-xl flex items-center gap-3">
+                            <div className="bg-white p-2 rounded-lg shadow-sm text-indigo-600">
+                                <MdPerson size={20} />
+                            </div>
+                            <div>
+                                <p className="text-xs text-indigo-400 font-medium uppercase tracking-wider">Usuário</p>
+                                <p className="font-semibold text-gray-900">{user.name}</p>
                             </div>
                         </div>
                     )}
