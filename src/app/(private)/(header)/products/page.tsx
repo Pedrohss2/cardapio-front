@@ -134,15 +134,11 @@ export default function Products() {
   return (
     <div className="min-h-screen bg-gray-50/50 pb-20">
 
-      {/* Hero Section */}
       <div className="bg-gradient-to-br from-indigo-900 via-indigo-800 to-purple-900 pt-28 pb-32 px-4 sm:px-6 lg:px-8 text-white relative overflow-hidden">
         <div className="absolute top-0 left-0 w-full h-full opacity-10 bg-[url('https://www.transparenttextures.com/patterns/food.png')]"></div>
         <div className="relative max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
           <div className="animate-in slide-in-from-left duration-700">
-            <h1 className="text-4xl md:text-5xl font-bold mb-4 tracking-tight">Nosso Cardápio</h1>
-            <p className="text-indigo-200 text-lg max-w-2xl">
-              Explore nossa seleção de pratos deliciosos, preparados com ingredientes frescos e muito carinho.
-            </p>
+            <h1 className="text-4xl md:text-5xl font-bold mb-4 tracking-tight">Cardápio</h1>
           </div>
 
           {isAuthenticated && (
@@ -164,10 +160,8 @@ export default function Products() {
         </div>
       </div>
 
-      {/* Main Content Area - Overlapping Hero */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-20 relative z-10">
 
-        {/* Search Bar */}
         <div className="bg-white rounded-2xl shadow-xl p-2 mb-8 flex items-center animate-in fade-in slide-in-from-bottom-8 duration-500">
           <div className="p-4 text-gray-400">
             <MdSearch size={24} />
@@ -181,7 +175,6 @@ export default function Products() {
           />
         </div>
 
-        {/* Sticky Categories */}
         <div className="sticky top-4 z-40 mb-10">
           <div className="flex gap-3 overflow-x-auto pb-4 pt-2 scrollbar-hide snap-x mask-linear-fade">
             {categories.map(cat => (
@@ -204,7 +197,6 @@ export default function Products() {
         <div className="space-y-12 pb-20">
           {categories
             .filter(cat => {
-              // Same filter logic
               const matchesSearch = cat.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 produtos.some(p => p.categoryId === cat.id && p.name.toLowerCase().includes(searchTerm.toLowerCase()));
               const hasProducts = produtos.some(prod => prod.categoryId === cat.id);
@@ -239,7 +231,6 @@ export default function Products() {
                         key={produto.id}
                         className="group bg-white rounded-2xl p-4 sm:p-5 border border-transparent hover:border-indigo-100 shadow-sm hover:shadow-xl transition-all duration-300 flex gap-4 sm:gap-6 relative overflow-hidden"
                       >
-                        {/* Image */}
                         <div className="w-28 h-28 sm:w-40 sm:h-40 flex-shrink-0 bg-gray-100 rounded-xl overflow-hidden relative shadow-inner">
                           {produto.image ? (
                             <img
@@ -254,7 +245,6 @@ export default function Products() {
                           )}
                         </div>
 
-                        {/* Content */}
                         <div className="flex-1 flex flex-col justify-between py-1">
                           <div>
                             <div className="flex justify-between items-start">
