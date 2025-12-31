@@ -28,7 +28,7 @@ O projeto estará disponível em http://localhost:3000
 ![Tela de fazer login](/public/login-page.png)
 
 ### Tela de criar empresa
-![Tela de registrar empresa](/public/cadastro-empresa.png)
+![Tela de registrar empresa](/public/cadastrar-empresa.png)
 
 ### Tela de dashboard
 ![Tela de dashboard](/public/dashboard.png)
