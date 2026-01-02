@@ -4,7 +4,6 @@ import { api } from "../functions/axios";
 
 import { User, Company } from "../interfaces";
 
-// Removed local User and Company interfaces
 
 interface AuthContextData {
     isAuthenticated: boolean;

@@ -35,10 +35,10 @@ export default function Header() {
 
     const navLinks = [
         { href: '/dashboard', label: 'Dashboard', icon: <MdDashboard size={24} /> },
-        { href: '/products', label: 'Cardápio', icon: <MdInventory size={24} /> },
-        { href: '/register-products', label: 'Novo Produto', icon: <MdAddBox size={24} /> },
+        { href: '/products', label: 'Produtos', icon: <MdInventory size={24} /> },
+        { href: '/register-products', label: 'Cadastrar Produto', icon: <MdAddBox size={24} /> },
         { href: '/register-category', label: 'Categorias', icon: <MdCategory size={24} /> },
-        { href: '/register-user', label: 'Equipe', icon: <MdPersonAdd size={24} /> },
+        { href: '/register-user', label: 'Usuários', icon: <MdPersonAdd size={24} /> },
         { href: '/settings', label: 'Configurações', icon: <MdSettings size={24} /> },
     ];
 
