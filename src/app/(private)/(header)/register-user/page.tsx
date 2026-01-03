@@ -5,7 +5,7 @@ import { UserService } from "@/src/services/userService";
 import { useEffect, useState } from "react";
 import { MdAdd, MdPerson, MdPersonAdd } from "react-icons/md";
 import Button from "@/src/components/general/Button";
-import Modal from "@/src/components/general/Modal";
+import Modal from "@/src/components/general/modals/general";
 import UserForm from "@/src/components/forms/UserForm";
 
 export default function RegisterUser() {
@@ -32,7 +32,6 @@ export default function RegisterUser() {
         <div className="pt-8 min-h-screen bg-gray-50/50 transition-colors duration-300">
             <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
 
-                {/* Header */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8 animate-in fly-in-bottom duration-500">
                     <div className="flex items-center gap-4">
                         <div className="p-3 bg-indigo-100 text-indigo-600 rounded-xl shadow-sm">
@@ -52,7 +51,6 @@ export default function RegisterUser() {
                     />
                 </div>
 
-                {/* Users Grid */}
                 {users.length === 0 ? (
                     <div className="bg-white rounded-2xl p-8 text-center shadow-sm border border-gray-100">
                         <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-400">
@@ -78,7 +76,6 @@ export default function RegisterUser() {
                                 </div>
                                 <div className="mt-4 pt-4 border-t border-gray-50 flex justify-between items-center text-sm">
                                     <span className="px-3 py-1 bg-green-50 text-green-700 rounded-full font-medium text-xs">Ativo</span>
-                                    {/* Actions could go here */}
                                 </div>
                             </div>
                         ))}
@@ -94,7 +91,7 @@ export default function RegisterUser() {
                 <UserForm
                     onSuccess={() => {
                         setIsModalOpen(false);
-                        fetchUsers(); // Refresh list
+                        fetchUsers();
                     }}
                     onCancel={() => setIsModalOpen(false)}
                 />

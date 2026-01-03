@@ -6,8 +6,9 @@ import { useEffect, useState } from "react";
 import { MdAdd, MdDeleteOutline, MdEdit, MdInventory } from "react-icons/md";
 import Swal from "sweetalert2";
 import Button from "@/src/components/general/Button";
-import Modal from "@/src/components/general/Modal";
+import Modal from "@/src/components/general/modals/general";
 import ProductForm from "@/src/components/forms/ProductForm";
+import ConfirmDeleteModal from "@/src/components/general/modals/confirmDeleteModal.tsx";
 import { Product } from "@/src/interfaces";
 
 export default function RegisterProductPage() {
@@ -17,6 +18,10 @@ export default function RegisterProductPage() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingProduct, setEditingProduct] = useState<Product | null>(null);
     const [searchTerm, setSearchTerm] = useState("");
+
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [productToDelete, setProductToDelete] = useState<{ id: string; name: string } | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     const fetchProducts = async () => {
         try {
@@ -31,27 +36,44 @@ export default function RegisterProductPage() {
         fetchProducts();
     }, []);
 
-    const handleDelete = async (id: string) => {
-        Swal.fire({
-            title: "Tem certeza?",
-            text: "Você não poderá reverter isso!",
-            icon: "warning",
-            showCancelButton: true,
-            confirmButtonColor: "#d33",
-            cancelButtonColor: "#3085d6",
-            confirmButtonText: "Sim, deletar!",
-            cancelButtonText: "Cancelar"
-        }).then(async (result) => {
-            if (result.isConfirmed) {
-                try {
-                    await productService.deleteProduct(id);
-                    setProducts(prev => prev.filter(p => p.id !== id));
-                    Swal.fire("Deletado!", "O produto foi deletado.", "success");
-                } catch (error) {
-                    Swal.fire("Erro!", "Erro ao deletar produto.", "error");
-                }
-            }
-        });
+    const handleDelete = async (product: Product) => {
+        setProductToDelete({ id: product.id!, name: product.name });
+        setIsDeleteModalOpen(true);
+    };
+
+    const confirmDelete = async () => {
+        if (!productToDelete) return;
+
+        setIsDeleting(true);
+        try {
+            await productService.deleteProduct(productToDelete.id);
+            setProducts(prev => prev.filter(p => p.id !== productToDelete.id));
+
+            const Toast = Swal.mixin({
+                toast: true,
+                position: 'bottom-end',
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true,
+            })
+
+            Toast.fire({ icon: 'success', title: 'Produto removido com sucesso' })
+
+            setIsDeleteModalOpen(false)
+                ;
+            setProductToDelete(null);
+        } catch (error) {
+            const Toast = Swal.mixin({
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true,
+            })
+            Toast.fire({ icon: 'error', title: 'Erro ao remover produto' })
+        } finally {
+            setIsDeleting(false);
+        }
     };
 
     const handleEdit = (product: Product) => {
@@ -145,7 +167,7 @@ export default function RegisterProductPage() {
                                         <MdEdit size={16} /> Editar
                                     </button>
                                     <button
-                                        onClick={() => handleDelete(item.id!)}
+                                        onClick={() => handleDelete(item)}
                                         className="p-2 text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors cursor-pointer"
                                         title="Excluir"
                                     >
@@ -172,6 +194,18 @@ export default function RegisterProductPage() {
                     onCancel={() => setIsModalOpen(false)}
                 />
             </Modal>
+
+            <ConfirmDeleteModal
+                isOpen={isDeleteModalOpen}
+                onClose={() => {
+                    setIsDeleteModalOpen(false);
+                    setProductToDelete(null);
+                }}
+                onConfirm={confirmDelete}
+                itemName={productToDelete?.name}
+                description="Você não poderá reverter isso!"
+                isLoading={isDeleting}
+            />
         </div>
     );
 }

@@ -9,8 +9,9 @@ import { FaChevronDown, FaChevronUp, FaRegEdit } from "react-icons/fa";
 import { MdAdd, MdDeleteOutline, MdFastfood, MdSearch } from "react-icons/md";
 import Swal from "sweetalert2";
 import Button from "@/src/components/general/Button";
-import Modal from "@/src/components/general/Modal";
+import Modal from "@/src/components/general/modals/general";
 import ProductForm from "@/src/components/forms/ProductForm";
+import ConfirmDeleteModal from "@/src/components/general/modals/confirmDeleteModal.tsx";
 import { TbCurrencyReal } from "react-icons/tb";
 
 export default function Products() {
@@ -29,6 +30,11 @@ export default function Products() {
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+
+  // Delete Modal State
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [productToDelete, setProductToDelete] = useState<{ id: string; name: string } | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Refs for scroll spy - simple implementation
   const categoryRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
@@ -69,34 +75,33 @@ export default function Products() {
     setIsModalOpen(true);
   };
 
-  const showAllertConfirmDelete = (id: string, e: React.MouseEvent) => {
+  const showAllertConfirmDelete = (product: Product, e: React.MouseEvent) => {
     e.stopPropagation();
-    Swal.fire({
-      title: "Confirmar Exclusão",
-      text: "Isso removerá o item do cardápio permanentemente.",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#EF4444",
-      cancelButtonColor: "#6B7280",
-      confirmButtonText: "Sim, excluir",
-      cancelButtonText: "Cancelar",
-      background: '#fff',
-      customClass: {
-        popup: 'rounded-2xl',
-        confirmButton: 'rounded-xl',
-        cancelButton: 'rounded-xl'
-      }
-    }).then((result) => {
-      if (result.isConfirmed) {
-        excludeItem(id);
-      }
-    });
+    setProductToDelete({ id: product.id!, name: product.name });
+    setIsDeleteModalOpen(true);
   };
 
-  const excludeItem = async (id: string) => {
+  const excludeItem = async () => {
+    if (!productToDelete) return;
+
+    setIsDeleting(true);
     try {
-      await productService.deleteProduct(id);
-      setProdutos(produtos.filter(produto => produto.id !== id));
+      await productService.deleteProduct(productToDelete.id);
+      setProdutos(produtos.filter(produto => produto.id !== productToDelete.id));
+
+      const Toast = Swal.mixin({
+        toast: true,
+        position: 'bottom-end',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true,
+      })
+      Toast.fire({ icon: 'success', title: 'Produto removido com sucesso' })
+
+      setIsDeleteModalOpen(false);
+      setProductToDelete(null);
+    } catch (error) {
+      console.error("Erro ao excluir o produto:", error);
       const Toast = Swal.mixin({
         toast: true,
         position: 'top-end',
@@ -104,9 +109,9 @@ export default function Products() {
         timer: 3000,
         timerProgressBar: true,
       })
-      Toast.fire({ icon: 'success', title: 'Produto removido com sucesso' })
-    } catch (error) {
-      console.error("Erro ao excluir o produto:", error);
+      Toast.fire({ icon: 'error', title: 'Erro ao remover produto' })
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -267,7 +272,7 @@ export default function Products() {
                                 <FaRegEdit /> Editar
                               </button>
                               <button
-                                onClick={(e) => showAllertConfirmDelete(produto.id!, e)}
+                                onClick={(e) => showAllertConfirmDelete(produto, e)}
                                 className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors cursor-pointer"
                               >
                                 <MdDeleteOutline size={18} /> Remover
@@ -297,6 +302,18 @@ export default function Products() {
             onCancel={() => setIsModalOpen(false)}
           />
         </Modal>
+
+        <ConfirmDeleteModal
+          isOpen={isDeleteModalOpen}
+          onClose={() => {
+            setIsDeleteModalOpen(false);
+            setProductToDelete(null);
+          }}
+          onConfirm={excludeItem}
+          itemName={productToDelete?.name}
+          description="Isso removerá o item do cardápio permanentemente."
+          isLoading={isDeleting}
+        />
 
       </div>
     </div>

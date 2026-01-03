@@ -2,17 +2,18 @@
 
 import { useAuth } from "@/src/contexts/AuthContext";
 import { UserService } from "@/src/services/userService";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Swal from "sweetalert2";
 import Button from "../../general/Button";
 import { Input } from "../../general/Input";
 
 interface UserFormProps {
+    initialData?: any;
     onSuccess: () => void;
     onCancel: () => void;
 }
 
-export default function UserForm({ onSuccess, onCancel }: UserFormProps) {
+export default function UserForm({ initialData, onSuccess, onCancel }: UserFormProps) {
     const { company } = useAuth();
     const userService = new UserService();
     const [isLoading, setIsLoading] = useState(false);
@@ -24,6 +25,17 @@ export default function UserForm({ onSuccess, onCancel }: UserFormProps) {
         confirmPassword: ''
     });
 
+    useEffect(() => {
+        if (initialData) {
+            setFormData({
+                name: initialData.name || '',
+                email: initialData.email || '',
+                password: '',
+                confirmPassword: ''
+            });
+        }
+    }, [initialData]);
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
@@ -32,7 +44,17 @@ export default function UserForm({ onSuccess, onCancel }: UserFormProps) {
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
         e.preventDefault();
 
-        if (formData.password !== formData.confirmPassword) {
+        // Validação de senha apenas se estiver preenchida ou se for novo usuário
+        if (!initialData && (!formData.password || !formData.confirmPassword)) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Erro',
+                text: 'Senha é obrigatória para novos usuários.'
+            });
+            return;
+        }
+
+        if (formData.password && formData.password !== formData.confirmPassword) {
             Swal.fire({
                 icon: 'error',
                 title: 'Erro',
@@ -41,7 +63,7 @@ export default function UserForm({ onSuccess, onCancel }: UserFormProps) {
             return;
         }
 
-        if (!company?.id) {
+        if (!company?.id && !initialData) {
             Swal.fire({
                 icon: 'error',
                 title: 'Erro',
@@ -53,38 +75,68 @@ export default function UserForm({ onSuccess, onCancel }: UserFormProps) {
         setIsLoading(true);
 
         try {
-            const userData = {
-                name: formData.name,
-                email: formData.email,
-                password: formData.password,
-                companyId: company.id
-            };
+            if (initialData?.id) {
+                // Modo de edição
+                const userData: any = {
+                    name: formData.name,
+                    email: formData.email,
+                };
 
-            const newUser = await userService.registerUser(userData);
+                // Só inclui senha se foi preenchida
+                if (formData.password) {
+                    userData.password = formData.password;
+                }
 
-            if (newUser?.id) {
-                await userService.associateUserToCompany(newUser.id, company.id);
+                await userService.updateUser(initialData.id, userData);
+
+                const Toast = Swal.mixin({
+                    toast: true,
+                    position: 'bottom-end',
+                    showConfirmButton: false,
+                    timer: 3000,
+                    timerProgressBar: true,
+                })
+                Toast.fire({ icon: 'success', title: 'Usuário atualizado com sucesso' })
+
+                onSuccess();
+            } else {
+                // Modo de criação
+                const userData = {
+                    name: formData.name,
+                    email: formData.email,
+                    password: formData.password,
+                    companyId: company?.id
+                };
+
+                const newUser = await userService.registerUser(userData);
+
+                if (newUser?.id && company?.id) {
+                    await userService.associateUserToCompany(newUser.id, company.id);
+                }
+
+                const Toast = Swal.mixin({
+                    toast: true,
+                    position: 'bottom-end',
+                    showConfirmButton: false,
+                    timer: 3000,
+                    timerProgressBar: true,
+                })
+                Toast.fire({ icon: 'success', title: 'Usuário cadastrado com sucesso' })
+
+                onSuccess();
+                setFormData({ name: '', email: '', password: '', confirmPassword: '' });
             }
-
-            Swal.fire({
-                icon: 'success',
-                title: 'Sucesso!',
-                text: 'Usuário cadastrado com sucesso!',
-                showConfirmButton: false,
-                timer: 1500
-            });
-
-            onSuccess();
-            setFormData({ name: '', email: '', password: '', confirmPassword: '' });
-
         } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : 'Erro ao cadastrar usuário';
+            const errorMessage = error instanceof Error ? error.message : (initialData ? 'Erro ao atualizar usuário' : 'Erro ao cadastrar usuário');
 
-            Swal.fire({
-                icon: 'error',
-                title: 'Erro',
-                text: errorMessage
-            });
+            const Toast = Swal.mixin({
+                toast: true,
+                position: 'bottom-end',
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true,
+            })
+            Toast.fire({ icon: 'error', title: errorMessage })
         } finally {
             setIsLoading(false);
         }
@@ -113,22 +165,22 @@ export default function UserForm({ onSuccess, onCancel }: UserFormProps) {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Input
-                    label="Senha"
+                    label={initialData ? "Nova Senha (opcional)" : "Senha"}
                     name="password"
                     type="password"
                     value={formData.password}
                     onChange={handleChange}
-                    required
+                    required={!initialData}
                     placeholder="••••••••"
                 />
 
                 <Input
-                    label="Confirmar Senha"
+                    label={initialData ? "Confirmar Nova Senha" : "Confirmar Senha"}
                     name="confirmPassword"
                     type="password"
                     value={formData.confirmPassword}
                     onChange={handleChange}
-                    required
+                    required={!initialData}
                     placeholder="••••••••"
                 />
             </div>
@@ -143,7 +195,7 @@ export default function UserForm({ onSuccess, onCancel }: UserFormProps) {
                 />
 
                 <Button
-                    text="Cadastrar"
+                    text={initialData ? "Atualizar" : "Cadastrar"}
                     type="submit"
                     className='cursor-pointer w-auto px-6'
                     isLoading={isLoading}

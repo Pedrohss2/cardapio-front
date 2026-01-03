@@ -58,4 +58,14 @@ export class UserService {
             throw new Error(error.response?.data?.message || "Erro ao associar usuário");
         }
     }
+
+    async updateUser(userId: string, data: any): Promise<any> {
+        try {
+            const response = await api.put(`/users/${userId}`, data);
+            return response.data;
+        } catch (error: any) {
+            console.error("Erro ao atualizar usuário:", error);
+            throw new Error(error.response?.data?.message || "Erro ao atualizar usuário");
+        }
+    }
 }

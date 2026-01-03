@@ -6,8 +6,9 @@ import { useEffect, useState } from "react";
 import { MdAdd, MdCategory, MdDeleteOutline, MdEdit } from "react-icons/md";
 import Swal from "sweetalert2";
 import Button from "@/src/components/general/Button";
-import Modal from "@/src/components/general/Modal";
+import Modal from "@/src/components/general/modals/general";
 import CategoryForm from "@/src/components/forms/CategoryForm";
+import ConfirmDeleteModal from "@/src/components/general/modals/confirmDeleteModal.tsx";
 import { Category } from "@/src/interfaces";
 
 export default function RegisterCategory() {
@@ -16,6 +17,9 @@ export default function RegisterCategory() {
     const [categories, setCategories] = useState<Category[]>([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [categoryToDelete, setCategoryToDelete] = useState<{ id: string; name: string } | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     const fetchCategories = async () => {
         try {
@@ -30,27 +34,44 @@ export default function RegisterCategory() {
         fetchCategories();
     }, []);
 
-    const handleDelete = async (id: string) => {
-        Swal.fire({
-            title: "Tem certeza?",
-            text: "Você não poderá reverter isso!",
-            icon: "warning",
-            showCancelButton: true,
-            confirmButtonColor: "#d33",
-            cancelButtonColor: "#3085d6",
-            confirmButtonText: "Sim, deletar!",
-            cancelButtonText: "Cancelar"
-        }).then(async (result) => {
-            if (result.isConfirmed) {
-                try {
-                    await categoryService.delete(id);
-                    setCategories(prev => prev.filter(c => c.id !== id));
-                    Swal.fire("Deletado!", "A categoria foi deletada.", "success");
-                } catch (error) {
-                    Swal.fire("Erro!", "Erro ao deletar categoria.", "error");
-                }
-            }
-        });
+    const handleDelete = async (category: Category) => {
+        setCategoryToDelete({ id: category.id!, name: category.name });
+        setIsDeleteModalOpen(true);
+    };
+
+    const confirmDelete = async () => {
+        if (!categoryToDelete) return;
+
+        setIsDeleting(true);
+        try {
+            await categoryService.delete(categoryToDelete.id);
+            setCategories(prev => prev.filter(c => c.id !== categoryToDelete.id));
+
+            const Toast = Swal.mixin({
+                toast: true,
+                position: 'bottom-end',
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true,
+            })
+            Toast.fire({ icon: 'success', title: 'Categoria removida com sucesso' })
+
+            setIsDeleteModalOpen(false);
+            setCategoryToDelete(null);
+
+        } catch (error) {
+            const Toast = Swal.mixin({
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true,
+            })
+
+            Toast.fire({ icon: 'error', title: 'Erro ao remover categoria' })
+        } finally {
+            setIsDeleting(false);
+        }
     };
 
     const handleEdit = (category: Category) => {
@@ -70,7 +91,7 @@ export default function RegisterCategory() {
         <div className="pt-8 min-h-screen bg-gray-50/50 transition-colors duration-300">
             <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
 
-                {/* Header */}
+
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8 animate-in fly-in-bottom duration-500">
                     <div className="flex items-center gap-4">
                         <div className="p-3 bg-indigo-100 text-indigo-600 rounded-xl shadow-sm">
@@ -90,7 +111,6 @@ export default function RegisterCategory() {
                     />
                 </div>
 
-                {/* Categories List */}
                 {categories.length === 0 ? (
                     <div className="bg-white rounded-2xl p-8 text-center shadow-sm border border-gray-100">
                         <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-400">
@@ -115,7 +135,7 @@ export default function RegisterCategory() {
                                         <MdEdit size={20} />
                                     </button>
                                     <button
-                                        onClick={() => handleDelete(item.id!)}
+                                        onClick={() => handleDelete(item)}
                                         className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
                                         title="Excluir"
                                     >
@@ -137,11 +157,23 @@ export default function RegisterCategory() {
                     initialData={editingCategory}
                     onSuccess={() => {
                         setIsModalOpen(false);
-                        fetchCategories(); // Refresh list
+                        fetchCategories();
                     }}
                     onCancel={() => setIsModalOpen(false)}
                 />
             </Modal>
+
+            <ConfirmDeleteModal
+                isOpen={isDeleteModalOpen}
+                onClose={() => {
+                    setIsDeleteModalOpen(false);
+                    setCategoryToDelete(null);
+                }}
+                onConfirm={confirmDelete}
+                itemName={categoryToDelete?.name}
+                description="Você não poderá reverter isso!"
+                isLoading={isDeleting}
+            />
         </div>
     );
 }
